@@ -364,7 +364,7 @@ def main():
                             instrument_weight=inst_weight,
                         )
                         if order_ev is not None:
-                            triggered_orders.append((sym, order_ev, curr_bar.close, signal_ev.carver_forecast))
+                            triggered_orders.append((sym, order_ev, curr_bar.close, signal_ev.carver_forecast, signal_ev.atr))
                             order_status_str = f"[bold yellow]SIGNAL: {order_ev.side.value} {order_ev.volume:.2f}L[/]"
 
                 regime_badge = (
@@ -458,10 +458,10 @@ def main():
             # Thực thi các lệnh kích hoạt
             if triggered_orders:
                 console.print(f"\n[bold green]⚡ TRIGGERED ORDERS IN THIS CYCLE: {len(triggered_orders)}[/]")
-                for sym, order_ev, c_price, forecast_val in triggered_orders:
+                for sym, order_ev, c_price, forecast_val, atr_val in triggered_orders:
                     console.print(
                         f"  -> [bold yellow]{order_ev.side.value} {order_ev.volume:.2f} lots {sym}[/] @ {c_price:.2f} | "
-                        f"SL={order_ev.stop_loss:.2f} | Forecast={forecast_val:+.1f}"
+                        f"SL={order_ev.stop_loss:.2f} | Forecast={forecast_val:+.1f} | ATR={atr_val:.2f}"
                     )
                     if is_live_mode:
                         ticket = connector.send_market_order(
@@ -470,6 +470,7 @@ def main():
                             volume=order_ev.volume,
                             stop_loss=order_ev.stop_loss,
                             comment=f"WuWei_{order_ev.side.value[:4]}",
+                            atr=atr_val,
                         )
                         if ticket:
                             console.print(f"     [bold green]✔ Live Order Executed on Exness! Ticket: #{ticket}[/]")

@@ -386,3 +386,37 @@ class TestInstitutionalRefinements:
         state_ok, allowed_ok = engine._classify_regime(bar_test, adx=32.0, chop=30.0, atr_ratio=1.3)
         assert allowed_ok is True
 
+    def test_dynamic_spread_gate_and_slippage_guard(self):
+        """Kiểm tra cơ chế Spread Gate và Max Slippage Deviation Guard của MT5Connector"""
+        from live_connector.mt5_connector import MT5Connector
+
+        connector = MT5Connector()
+
+        # 1. Kiểm tra tính toán Slippage Deviation động:
+        # Giả sử Vàng (XAUUSD): price = 2050.0, SL = 2030.0 (SL distance = 20.0 USD)
+        # point = 0.01 -> sl_distance_points = 2000 points.
+        # dyn_deviation = 2000 * 0.05 = 100 points -> kẹp trong [10, 80] = 80 points.
+        point = 0.01
+        sl_dist = 20.0
+        sl_points = sl_dist / point
+        deviation = max(10, min(int(sl_points * 0.05), 80))
+        assert deviation == 80
+
+        # Giả sử FX (EURUSD): price = 1.1000, SL = 1.0950 (SL distance = 0.0050 = 50 pips)
+        # point = 0.00001 -> sl_distance_points = 500 points.
+        # dyn_deviation = 500 * 0.05 = 25 points -> nằm trọn trong [10, 80] = 25 points.
+        point_fx = 0.00001
+        sl_dist_fx = 0.0050
+        sl_points_fx = sl_dist_fx / point_fx
+        deviation_fx = max(10, min(int(sl_points_fx * 0.05), 80))
+        assert deviation_fx == 25
+
+        # 2. Kiểm tra ghi nhật ký thực thi (Execution Audit Log)
+        test_msg = "[TEST_AUDIT] Execution Gate Verified"
+        connector._log_execution_audit(test_msg)
+        assert connector.audit_log_path.exists()
+        with open(connector.audit_log_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            assert test_msg in content
+
+

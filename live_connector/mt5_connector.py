@@ -4,10 +4,13 @@ Institutional Live Execution Engine for Exness
 """
 from __future__ import annotations
 
+import collections
 import os
+from pathlib import Path
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
+import numpy as np
 import pandas as pd
 import MetaTrader5 as mt5
 
@@ -20,7 +23,9 @@ class MT5Connector:
     Quản lý kết nối an toàn với MetaTrader 5 Terminal:
     - Tự động nhận diện suffix mã sản phẩm (e.g. XAUUSDm trên Exness Standard/Raw)
     - Tải nến lịch sử OHLCV trực tiếp từ broker để warmup
-    - Đẩy lệnh Market có Hard Stop Loss gắn trực tiếp trên máy chủ sàn Exness
+    - Dynamic Spread Gate: Hoãn vào lệnh nếu spread giãn do Rollover hoặc thiếu thanh khoản
+    - Max Slippage Deviation Guard: Khóa trượt giá động theo khoảng cách Stop Loss
+    - Ghi nhật ký thực thi chi tiết (execution_audit.log) để giám sát Execution Drag
     - Cập nhật dời Stop Loss (Break-even & Trailing Stop) theo thời gian thực
     """
 
@@ -40,6 +45,8 @@ class MT5Connector:
         self.magic = magic
         self.is_connected = False
         self.symbol_map: Dict[str, str] = {}
+        self.spread_history: Dict[str, collections.deque] = collections.defaultdict(lambda: collections.deque(maxlen=60))
+        self.audit_log_path = Path(__file__).resolve().parent.parent / "execution_audit.log"
 
     def connect(self) -> bool:
         """Khởi tạo kết nối MT5 Terminal"""
@@ -165,27 +172,124 @@ class MT5Connector:
             bars.append(bar)
         return bars
 
+    def _log_execution_audit(self, message: str) -> None:
+        """Ghi nhật ký thực thi chi tiết phục vụ rà soát Execution Drag & Slippage"""
+        try:
+            ts_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            line = f"[{ts_str}] {message}\n"
+            with open(self.audit_log_path, "a", encoding="utf-8") as f:
+                f.write(line)
+        except Exception:
+            pass
+
+    def check_spread_gate(
+        self,
+        generic_symbol: str,
+        atr: Optional[float] = None
+    ) -> Tuple[bool, float, float, str]:
+        """
+        Dynamic Spread Gate:
+        Kiểm tra độ giãn Spread theo chuẩn:
+        Spread_current <= min(2.5 * Spread_median, 0.20 * ATR)
+        Tự động đóng vai trò Rollover & Illiquidity Lock khi spread bị bung rộng.
+        Trả về: (is_allowed, current_spread_points, max_allowed_spread_points, reason)
+        """
+        broker_symbol = self.resolve_symbol(generic_symbol)
+        if not broker_symbol:
+            return False, 0.0, 0.0, "Symbol not resolved"
+
+        s_info = mt5.symbol_info(broker_symbol)
+        tick = mt5.symbol_info_tick(broker_symbol)
+        if not s_info or not tick:
+            return False, 0.0, 0.0, "Cannot get tick/symbol info"
+
+        point = s_info.point if s_info.point > 0 else 0.0001
+        current_spread_points = float(s_info.spread) if s_info.spread > 0 else float(round((tick.ask - tick.bid) / point, 1))
+
+        # Lưu mẫu spread vào lịch sử trượt
+        self.spread_history[generic_symbol].append(current_spread_points)
+
+        # Baseline Median Spread (Points) theo từng nhóm tài sản
+        clean_sym = generic_symbol.replace("m", "").replace("_", "").upper()
+        if "XAU" in clean_sym or clean_sym == "GOLD":
+            baseline_median = 200.0  # ~0.20 USD trên Vàng
+        elif "XAG" in clean_sym or clean_sym == "SILVER":
+            baseline_median = 30.0   # ~0.03 USD trên Bạc
+        elif "BTC" in clean_sym:
+            baseline_median = 2500.0 # ~25 USD trên Bitcoin
+        elif "ETH" in clean_sym:
+            baseline_median = 250.0  # ~2.5 USD trên ETH
+        elif any(idx in clean_sym for idx in ("US500", "SPX", "USTEC", "NAS", "JP225", "DE30")):
+            baseline_median = 80.0
+        elif any(e in clean_sym for e in ("USOIL", "UKOIL", "OIL")):
+            baseline_median = 40.0
+        else:
+            baseline_median = 15.0   # ~1.5 pips cho FX Majors
+
+        if len(self.spread_history[generic_symbol]) >= 5:
+            median_spread = float(np.median(list(self.spread_history[generic_symbol])))
+        else:
+            median_spread = baseline_median
+
+        # Ngưỡng 1: 2.5 * Spread_median
+        max_from_median = 2.5 * median_spread
+
+        # Ngưỡng 2: 0.20 * ATR (quy đổi ra points)
+        if atr is not None and atr > 0:
+            atr_points = atr / point
+            max_from_atr = 0.20 * atr_points
+            max_allowed = min(max_from_median, max_from_atr)
+        else:
+            max_allowed = max_from_median
+
+        # Đảm bảo mức sàn tối thiểu hợp lý (không thắt chặt dưới mức bình thường)
+        max_allowed = max(max_allowed, baseline_median * 1.5)
+
+        if current_spread_points > max_allowed:
+            reason = f"Spread {current_spread_points:.1f} pts > Max Allowed {max_allowed:.1f} pts (2.5x Median: {max_from_median:.1f})"
+            return False, current_spread_points, max_allowed, reason
+
+        return True, current_spread_points, max_allowed, "Normal"
+
     def send_market_order(
         self,
         generic_symbol: str,
         side: str,  # "BUY" hoặc "SELL"
         volume: float,
         stop_loss: float,
-        comment: str = "WuWei Core"
+        comment: str = "WuWei Core",
+        atr: Optional[float] = None
     ) -> Optional[int]:
-        """Gửi lệnh Market Order trực tiếp lên Exness Server với Hard Stop Loss"""
+        """Gửi lệnh Market Order trực tiếp lên Exness Server với Dynamic Spread Gate & Max Slippage Guard"""
         broker_symbol = self.resolve_symbol(generic_symbol)
         if not broker_symbol:
             return None
 
+        # 1. DYNAMIC SPREAD GATE CHECK (Chống giãn Spread phiên Mỹ/Rollover)
+        is_allowed, cur_spread, max_spread, spread_reason = self.check_spread_gate(generic_symbol, atr=atr)
+        if not is_allowed:
+            log_msg = f"[EXECUTION_DEFERRED] {generic_symbol} Spread {cur_spread:.1f} > Max Allowed {max_spread:.1f} ({spread_reason})"
+            print(f"[MT5Connector WARNING] {log_msg}")
+            self._log_execution_audit(log_msg)
+            return None
+
         tick = mt5.symbol_info_tick(broker_symbol)
-        if not tick:
-            print(f"[MT5Connector ERROR] Cannot get tick for {broker_symbol}")
+        s_info = mt5.symbol_info(broker_symbol)
+        if not tick or not s_info:
+            print(f"[MT5Connector ERROR] Cannot get tick/info for {broker_symbol}")
             return None
 
         is_buy = side.upper() == "BUY"
         order_type = mt5.ORDER_TYPE_BUY if is_buy else mt5.ORDER_TYPE_SELL
         price = tick.ask if is_buy else tick.bid
+
+        # 2. MAX SLIPPAGE DEVIATION GUARD (Khóa trượt giá động theo khoảng cách SL)
+        point = s_info.point if s_info.point > 0 else 0.0001
+        sl_distance = abs(price - stop_loss)
+        sl_distance_points = sl_distance / point if point > 0 else 50.0
+        # Khống chế trượt giá tối đa 5% khoảng cách SL (kẹp trong [10, 80] points)
+        dyn_deviation = int(sl_distance_points * 0.05)
+        deviation = max(10, min(dyn_deviation, 80))
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
@@ -193,22 +297,35 @@ class MT5Connector:
             "volume": float(volume),
             "type": order_type,
             "price": price,
-            "sl": float(round(stop_loss, 2 if "JPY" in broker_symbol or "XAU" in broker_symbol else 5)),
+            "sl": float(round(stop_loss, s_info.digits)),
             "tp": 0.0,  # Vô Vi: R:R mở
-            "deviation": 20,
+            "deviation": deviation,
             "magic": self.magic,
             "comment": comment[:31],
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
 
+        self._log_execution_audit(
+            f"[ORDER_SUBMITTED] {generic_symbol} {side} {volume:.2f}L @ {price} | "
+            f"SL={stop_loss:.5f} | Spread={cur_spread:.1f} pts | DeviationGuard={deviation} pts"
+        )
+
         result = mt5.order_send(request)
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             error_code = result.retcode if result else mt5.last_error()
-            print(f"[MT5Connector ERROR] Order send failed: {error_code} | Comment: {result.comment if result else ''}")
+            err_comment = result.comment if result else ''
+            err_msg = f"[ORDER_FAILED] Ticket: None | Retcode={error_code} | Comment: {err_comment}"
+            print(f"[MT5Connector ERROR] {err_msg}")
+            self._log_execution_audit(f"{err_msg} for {generic_symbol} {side}")
             return None
 
-        print(f"[MT5Connector SUCCESS] Order executed: Ticket={result.order} | {side} {volume} lots {broker_symbol} @ {result.price} | SL={stop_loss:.2f}")
+        exec_msg = (
+            f"[ORDER_FILLED] Ticket=#{result.order} | {side} {volume:.2f}L {broker_symbol} @ {result.price} | "
+            f"SL={stop_loss:.5f} | Retcode={result.retcode}"
+        )
+        print(f"[MT5Connector SUCCESS] {exec_msg}")
+        self._log_execution_audit(exec_msg)
         return result.order
 
     def modify_stop_loss(self, ticket: int, new_sl: float, symbol: Optional[str] = None) -> bool:
