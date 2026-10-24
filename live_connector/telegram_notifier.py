@@ -145,3 +145,19 @@ class TelegramNotifier:
             f"<i>Bảo toàn vốn tuyệt đối là ưu tiên cao nhất!</i>"
         )
         self._send_async(msg)
+
+    def send_system_alert(
+        self,
+        title: str,
+        details: str,
+        alert_type: str = "WARNING",
+    ) -> None:
+        """Gửi cảnh báo trạng thái hệ thống / Watchdog"""
+        icon = "⚠️" if alert_type == "WARNING" else ("🚨" if alert_type == "CRITICAL" else "ℹ️")
+        msg = (
+            f"{icon} <b>WUWEI WATCHDOG — {title.upper()}</b>\n\n"
+            f"{details}\n\n"
+            f"• <b>Time:</b> <code>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</code>"
+        )
+        self._send_async(msg)
+

@@ -30,6 +30,23 @@ if %errorlevel% neq 0 (
 )
 echo [2/3] Python environment ready.
 
+REM --- Kiểm tra và tự động khởi động MetaTrader 5 Terminal nếu chưa chạy ---
+tasklist /fi "imagename eq terminal64.exe" 2>nul | findstr /i "terminal64.exe" >nul
+if %errorlevel% neq 0 (
+    echo [INFO] MetaTrader 5 Terminal chua duoc bat. Dang tu dong khoi dong MT5...
+    set "MT5_EXE=C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe"
+    if exist "!MT5_EXE!" (
+        start "" "!MT5_EXE!"
+        echo [INFO] Da khoi dong MT5. Cho 25 giay de MT5 hoan tat dang nhap Exness Server...
+        timeout /t 25 /nobreak >nul
+        echo [INFO] MT5 da san sang!
+    ) else (
+        echo [WARN] Khong tim thay terminal64.exe tai duong dan mac dinh.
+    )
+) else (
+    echo [INFO] MetaTrader 5 Terminal dang chay san sang.
+)
+
 set RESTART_COUNT=0
 set MAX_RESTARTS=50
 set RESTART_DELAY=15
