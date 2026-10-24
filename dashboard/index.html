@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WuWei Core — Quantitative Trading Telemetry</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0B0E14;
+            --bg-card: #151922;
+            --bg-card-hover: #1E232F;
+            --border-color: #232936;
+            --text-main: #F0F4F8;
+            --text-muted: #828B9E;
+            --accent-cyan: #00E5FF;
+            --accent-green: #00E676;
+            --accent-red: #FF5252;
+            --accent-yellow: #FFD740;
+            --accent-purple: #B388FF;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        .title-group h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .title-group p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .badge-live {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--accent-green);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-live::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+        .card-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .card-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #11141C;
+            text-align: left;
+            padding: 14px 16px;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        tr:hover td {
+            background: var(--bg-card-hover);
+        }
+        .tag-buy { color: var(--accent-green); font-weight: 700; }
+        .tag-sell { color: var(--accent-red); font-weight: 700; }
+        .tag-hold { color: var(--text-muted); }
+        .tag-regime-trend { color: var(--accent-green); background: rgba(0, 230, 118, 0.1); padding: 3px 8px; border-radius: 4px; }
+        .tag-regime-ranging { color: var(--accent-yellow); background: rgba(255, 215, 64, 0.1); padding: 3px 8px; border-radius: 4px; }
+        .tag-regime-notrend { color: var(--text-muted); background: rgba(130, 139, 158, 0.1); padding: 3px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title-group">
+            <h1>WuWei Core Telemetry <span class="badge-live">LIVE BROKER ACTIVE</span></h1>
+            <p>Institutional Systematic Trend-Following Platform • Triết lý Vô Vi x Robert Carver</p>
+        </div>
+        <div id="last-updated" style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--text-muted);">
+            Connecting to daemon...
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="card">
+            <div class="card-label">Master Account</div>
+            <div class="card-value" id="val-account" style="color: var(--accent-cyan);">--</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Balance / Equity</div>
+            <div class="card-value" id="val-equity" style="color: var(--accent-green);">--</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Free Margin</div>
+            <div class="card-value" id="val-margin">--</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Daily Drawdown</div>
+            <div class="card-value" id="val-dd" style="color: var(--accent-yellow);">--</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Circuit Breaker</div>
+            <div class="card-value" id="val-cb" style="color: var(--accent-green);">NORMAL</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Asset Class</th>
+                    <th style="text-align: right;">Price</th>
+                    <th style="text-align: center;">Thiên Thời (Regime)</th>
+                    <th style="text-align: center;">ADX / CHOP</th>
+                    <th style="text-align: right;">Forecast (F)</th>
+                    <th style="text-align: center;">Signal</th>
+                    <th>Position / Execution</th>
+                </tr>
+            </thead>
+            <tbody id="asset-rows">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading live telemetry state...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchTelemetry() {
+            try {
+                const res = await fetch('telemetry_state.json?t=' + Date.now());
+                if (!res.ok) return;
+                const data = await res.json();
+
+                document.getElementById('last-updated').textContent = 'Last cycle: ' + data.timestamp;
+                document.getElementById('val-account').textContent = data.account.login + ' (' + data.account.server + ')';
+                document.getElementById('val-equity').textContent = '$' + data.account.equity.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('val-margin').textContent = '$' + data.account.free_margin.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('val-dd').textContent = (data.account.daily_drawdown_pct * 100).toFixed(2) + '%';
+                
+                const cbElem = document.getElementById('val-cb');
+                if (data.account.circuit_breaker_active) {
+                    cbElem.textContent = 'LOCKED';
+                    cbElem.style.color = 'var(--accent-red)';
+                } else {
+                    cbElem.textContent = 'NORMAL';
+                    cbElem.style.color = 'var(--accent-green)';
+                }
+
+                const tbody = document.getElementById('asset-rows');
+                tbody.innerHTML = '';
+
+                data.assets.forEach(a => {
+                    const tr = document.createElement('tr');
+                    
+                    let regimeClass = 'tag-regime-ranging';
+                    if (a.regime.includes('TREND')) regimeClass = 'tag-regime-trend';
+                    else if (a.regime.includes('NO_TREND')) regimeClass = 'tag-regime-notrend';
+
+                    let actionClass = 'tag-hold';
+                    if (a.action === 'BUY') actionClass = 'tag-buy';
+                    else if (a.action === 'SELL') actionClass = 'tag-sell';
+
+                    const pFormatted = a.class.includes('FX') ? a.price.toFixed(5) : a.price.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+                    tr.innerHTML = `
+                        <td style="font-weight: 700; color: var(--accent-cyan);">${a.symbol}</td>
+                        <td style="color: var(--text-muted);">${a.class}</td>
+                        <td style="text-align: right;">${pFormatted}</td>
+                        <td style="text-align: center;"><span class="${regimeClass}">${a.regime}</span></td>
+                        <td style="text-align: center;">${a.adx.toFixed(1)} / ${a.chop.toFixed(1)}</td>
+                        <td style="text-align: right; color: ${a.forecast > 0 ? 'var(--accent-green)' : (a.forecast < 0 ? 'var(--accent-red)' : 'var(--text-muted)')}; font-weight: 600;">${a.forecast > 0 ? '+' : ''}${a.forecast.toFixed(1)}</td>
+                        <td style="text-align: center;"><span class="${actionClass}">${a.action}</span></td>
+                        <td>${a.status}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error("Telemetry fetch error:", e);
+            }
+        }
+
+        fetchTelemetry();
+        setInterval(fetchTelemetry, 3000);
+    </script>
+</body>
+</html>

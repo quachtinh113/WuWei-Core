@@ -1,0 +1,315 @@
+# ==============================================================================
+# WUWEI CORE QUANTITATIVE TRADING ENGINE
+# Triết lý: "Thuận theo tự nhiên / Vô vi" (Trend-Following, Pure Price Action)
+# Zero-Forecast, Volatility-Targeted Risk Control, No Martingale/Grid
+# ==============================================================================
+
+system:
+  name: "WuWei Core Quantitative Engine"
+  version: "1.0.0"
+  philosophy: "Thuận theo tự nhiên / Vô vi - Pure Price Action Trend Riding"
+  log_level: "INFO"
+  structured_logging: true
+
+# Đặc tả thông số sản phẩm (Multi-Asset Instrument Specifications - Exness & Carver Universe)
+symbols:
+  # 1. Kim loại quý (Precious Metals)
+  XAUUSD:
+    contract_size: 100.0
+    tick_size: 0.001
+    tick_value: 0.10
+    point_size: 0.001
+    pip_size: 0.10
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  XAGUSD:
+    contract_size: 5000.0
+    tick_size: 0.001
+    tick_value: 5.00
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+
+  # 2. Ngoại hối G10 (Major FX Pairs)
+  EURUSD:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 1.00
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  GBPUSD:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 1.00
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  USDJPY:
+    contract_size: 100000.0
+    tick_size: 0.001
+    tick_value: 0.67
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 300.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  AUDUSD:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 1.00
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  USDCAD:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 0.70
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  USDCHF:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 1.20
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  NZDUSD:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 1.00
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+
+  # 3. Ngoại hối chéo (Cross FX Pairs)
+  EURJPY:
+    contract_size: 100000.0
+    tick_size: 0.001
+    tick_value: 0.67
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  GBPJPY:
+    contract_size: 100000.0
+    tick_size: 0.001
+    tick_value: 0.67
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  EURGBP:
+    contract_size: 100000.0
+    tick_size: 0.00001
+    tick_value: 1.32
+    point_size: 0.00001
+    pip_size: 0.0001
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+  AUDJPY:
+    contract_size: 100000.0
+    tick_size: 0.001
+    tick_value: 0.67
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 7.00
+
+  # 4. Chỉ số chứng khoán toàn cầu (Global Equity Indices)
+  US30:
+    contract_size: 10.0
+    tick_size: 0.10
+    tick_value: 1.00
+    point_size: 0.10
+    pip_size: 1.00
+    min_lot: 0.01
+    max_lot: 20.0
+    lot_step: 0.01
+    slippage_pips: 1.0
+    commission_per_lot: 0.00
+  US500:
+    contract_size: 100.0
+    tick_size: 0.01
+    tick_value: 1.00
+    point_size: 0.01
+    pip_size: 0.10
+    min_lot: 0.01
+    max_lot: 20.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 0.00
+  USTEC:
+    contract_size: 100.0
+    tick_size: 0.01
+    tick_value: 1.00
+    point_size: 0.01
+    pip_size: 0.10
+    min_lot: 0.01
+    max_lot: 20.0
+    lot_step: 0.01
+    slippage_pips: 0.5
+    commission_per_lot: 0.00
+  DE30:
+    contract_size: 1.0
+    tick_size: 0.10
+    tick_value: 0.11
+    point_size: 0.10
+    pip_size: 1.00
+    min_lot: 0.07
+    max_lot: 300.0
+    lot_step: 0.01
+    slippage_pips: 1.0
+    commission_per_lot: 0.00
+
+  # 5. Năng lượng & Hàng hóa (Energies)
+  USOIL:
+    contract_size: 1000.0
+    tick_size: 0.001
+    tick_value: 1.00
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 100.0
+    lot_step: 0.01
+    slippage_pips: 1.0
+    commission_per_lot: 0.00
+  UKOIL:
+    contract_size: 1000.0
+    tick_size: 0.001
+    tick_value: 1.00
+    point_size: 0.001
+    pip_size: 0.01
+    min_lot: 0.01
+    max_lot: 100.0
+    lot_step: 0.01
+    slippage_pips: 1.0
+    commission_per_lot: 0.00
+
+  # 6. Tiền mã hóa (Cryptocurrency)
+  BTCUSD:
+    contract_size: 1.0
+    tick_size: 0.01
+    tick_value: 0.01
+    point_size: 0.01
+    pip_size: 1.00
+    min_lot: 0.01
+    max_lot: 200.0
+    lot_step: 0.01
+    slippage_pips: 2.0
+    commission_per_lot: 0.00
+  ETHUSD:
+    contract_size: 1.0
+    tick_size: 0.01
+    tick_value: 0.01
+    point_size: 0.01
+    pip_size: 0.10
+    min_lot: 0.10
+    max_lot: 2000.0
+    lot_step: 0.01
+    slippage_pips: 1.0
+    commission_per_lot: 0.00
+
+# 1. Thiên thời - State Detection Engine
+regime:
+  adx_period: 14
+  chop_period: 14
+  atr_period: 14
+  atr_sma_period: 50
+  # Trạng thái VÔ VI (NO_TREND): Khóa toàn bộ lệnh mở mới khi nén biên độ / chop
+  adx_no_trend_threshold: 20.0
+  chop_no_trend_threshold: 61.8
+  # Trạng thái KÍCH HOẠT XU HƯỚNG: Chỉ vào lệnh khi xu hướng rõ nét
+  adx_trend_threshold: 25.0
+  chop_trend_threshold: 38.2
+
+# 2. Thuận dòng - Signal Generator Engine
+signal:
+  entry_channel_period: 20      # Donchian Breakout 20 bars
+  exit_channel_period: 10       # Donchian Exit 10 bars ngược chiều
+
+# 3. Tri chỉ - Volatility Targeting & Money Management Engine
+risk:
+  initial_capital: 100000.0
+  risk_per_trade_pct: 0.01       # 1.0% rủi ro cho mỗi lệnh
+  atr_period: 20                 # Đơn vị biến động N = ATR(20)
+  stop_loss_atr_mult: 2.0        # Hard Stop Loss = Entry ± 2.0 * N
+  max_daily_drawdown_pct: 0.03   # Circuit Breaker: 3.0% Max Daily Drawdown
+  max_total_drawdown_pct: 0.06   # 6.0% Max Total Drawdown Limit
+  max_open_trades_per_symbol: 1  # Không mở quá 1 lệnh đồng thời trên 1 cặp
+  allow_dca: false               # Nghiêm cấm DCA nhồi lệnh âm
+  allow_martingale: false        # Nghiêm cấm Martingale gấp thếp
+  allow_hedge: false             # Nghiêm cấm Hedging đối ứng
+
+# 4. Hành vô vi - Execution & Trailing Exit Engine
+execution:
+  trailing_mode: "DONCHIAN_10"   # "DONCHIAN_10" hoặc "CHANDELIER"
+  chandelier_atr_mult: 3.0
+  breakeven_atr_trigger: 2.0     # Dời SL về hòa vốn khi giá chạy được +2.0 * N
+  breakeven_buffer_pips: 1.0     # Buffer bù đắp trượt giá & phí hoa hồng
+
+# 4.1. pysystemtrade (Robert Carver) Institutional Quantitative Engine
+carver:
+  enabled: true                  # Sử dụng định lượng Carver kết hợp Vô Vi
+  annual_vol_target: 0.20        # 20.0% Portfolio Annual Volatility
+  average_absolute_forecast: 10.0
+  forecast_cap: 20.0             # Giới hạn cực đại Forecast [-20.0, +20.0]
+  buffer_ratio: 0.10             # Độ rộng Buffer 10% để triệt tiêu giao dịch vi tế
+  volatility_lookback_days: 35   # Chu kỳ EWMA ước lượng biến động giá
+  fdm: 1.25                      # Forecast Diversification Multiplier
+  idm: 1.35                      # Instrument Diversification Multiplier
+  deleveraging_dd_threshold: 0.015 # Hạ đòn bẩy khi DD vượt 1.5%
+
+# 5. Backtest Configuration
+backtest:
+  initial_cash: 100000.0
+  default_symbol: "XAUUSD"
+  generate_synthetic_if_missing: true
+  start_date: "2024-01-01"
+  end_date: "2024-12-31"
