@@ -6,7 +6,7 @@ color 0A
 echo ===============================================================================
 echo   WUWEI CORE QUANTITATIVE SYSTEM - INSTITUTIONAL LIVE DAEMON
 echo   Philosophy: WuWei Trend Following x Robert Carver (pysystemtrade)
-echo   Master Account: 413956172 ^| Server: Exness-MT5Trial6
+echo   Live Telemetry and Multi-Stage Quantitative Execution Pipeline
 echo ===============================================================================
 echo.
 
