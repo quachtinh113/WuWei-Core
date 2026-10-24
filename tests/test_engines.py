@@ -278,3 +278,111 @@ class TestEndToEndBacktest:
         assert result.metrics is not None
         assert result.metrics.ending_equity > 0
         assert len(result.equity_curve) == 300
+
+
+class TestInstitutionalRefinements:
+    def test_currency_aware_cluster_risk(self):
+        """Kiểm tra Portfolio Allocator chặn dồn cược USD (Cluster Risk) với ngưỡng 0.65"""
+        from engines.portfolio_allocator import PortfolioAllocator
+        from core.types import Position, PositionSide
+        from datetime import datetime
+
+        allocator = PortfolioAllocator(symbols=["EURUSD", "GBPUSD", "USDJPY", "USDCAD"], max_correlation_threshold=0.65)
+
+        # Giả lập vị thế đang mở: EURUSD SHORT (tức là LONG USD)
+        open_pos = {
+            "EURUSD": Position(
+                symbol="EURUSD",
+                side=PositionSide.SHORT,
+                volume=0.02,
+                entry_price=1.1000,
+                entry_time=datetime.now(),
+                current_price=1.0980,
+                stop_loss=1.1100,
+                take_profit=None
+            )
+        }
+
+        # 1. Ứng viên GBPUSD SHORT (cũng là LONG USD, tương quan dương +0.85 >= 0.65) -> Phải bị CHẶN
+        conflict, reason = allocator.check_correlation_conflict("GBPUSD", "SELL", open_pos)
+        assert conflict is True
+        assert "Cluster Concentration Risk" in reason
+
+        # 2. Ứng viên USDJPY BUY (cũng là LONG USD, tương quan nghịch -0.85 <= -0.65) -> Phải bị CHẶN
+        conflict_jpy, reason_jpy = allocator.check_correlation_conflict("USDJPY", "BUY", open_pos)
+        assert conflict_jpy is True
+        assert "Cluster Concentration Risk" in reason_jpy
+
+        # 3. Ứng viên USDJPY ngược chiều (tức là SHORT USD) -> Không bị xung đột
+        conflict_eur_buy, _ = allocator.check_correlation_conflict("USDJPY", "SELL", open_pos)
+        assert conflict_eur_buy is False
+
+    def test_gold_volatility_floor(self, default_settings):
+        """Kiểm tra Volatility Floor trên XAUUSD chống phình to Lot khi ATR nén cực đại"""
+        from engines.risk_engine import RiskEngine
+        from core.events import SignalEvent
+        from core.types import SignalAction, RegimeState, AccountSnapshot
+        from datetime import datetime
+
+        risk_engine = RiskEngine(default_settings.risk, default_settings.symbols, carver_config=None)
+        risk_engine.carver_config.enabled = False
+
+        account = AccountSnapshot(
+            timestamp=datetime.now(),
+            balance=100000.0,
+            equity=100000.0,
+            margin_used=0.0,
+            free_margin=100000.0,
+            daily_starting_equity=100000.0,
+            daily_drawdown_pct=0.0,
+            peak_equity=100000.0,
+            total_drawdown_pct=0.0,
+            circuit_breaker_active=False
+        )
+
+        # Giả lập nến Vàng nén cực độ: ATR = 1.0 USD tại giá 2000 USD
+        # Nếu không có floor, 1000 USD risk / (2 * 1.0 * 100) = 5.0 lots (phình to gấp 5 lần!)
+        # Với floor (8.0 USD), cost = 2 * 8.0 * 100 = 1600 USD -> max 0.62 lots
+        sig_compressed = SignalEvent(
+            symbol="XAUUSD",
+            timestamp=datetime.now(),
+            action=SignalAction.BUY,
+            entry_donchian_high=2005.0,
+            entry_donchian_low=1995.0,
+            exit_donchian_high=2000.0,
+            exit_donchian_low=1990.0,
+            atr=1.0,  # ATR cực nhỏ
+            regime_state=RegimeState.TRENDING_BULL,
+            reason="Compressed Squeeze"
+        )
+
+        order, _ = risk_engine.evaluate_order(sig_compressed, current_price=2000.0, account=account, open_positions={})
+        assert order is not None
+        # Khối lượng bị khống chế bởi sàn ATR (8.0 USD), không bị thổi phồng lên 5.0 lots!
+        assert order.volume <= 0.65
+        assert order.volume == 0.62
+
+    def test_metals_whipsaw_filter(self, default_settings):
+        """Kiểm tra RegimeEngine siết ADX >= 30 và ATR Ratio >= 1.2 cho Vàng"""
+        from engines.regime_engine import RegimeEngine
+        from core.events import BarEvent
+        from datetime import datetime, timedelta
+
+        engine = RegimeEngine(default_settings.regime)
+        t = datetime(2024, 1, 1, 10, 0)
+
+        # Nạp chuỗi nến sideway nhẹ cho XAUUSD
+        for i in range(40):
+            bar = BarEvent("XAUUSD", t + timedelta(hours=i), 2000.0 + i*0.1, 2005.0 + i*0.1, 1995.0 + i*0.1, 2002.0 + i*0.1)
+            regime = engine.update(bar)
+
+        # Giả lập nến mới có ADX = 26.0 (thỏa mãn chuẩn cũ 25.0 nhưng dưới ngưỡng 30.0 của Metals)
+        bar_test = BarEvent("XAUUSD", t + timedelta(hours=41), 2010.0, 2015.0, 2008.0, 2014.0)
+        # Ép thử hàm phân loại
+        state, allowed = engine._classify_regime(bar_test, adx=26.0, chop=30.0, atr_ratio=1.0)
+        assert allowed is False  # Bị CHẶN vì ADX chưa đạt 30.0 và ATR Ratio chưa đạt 1.2!
+
+        # Khi ADX >= 30.0 VÀ ATR Ratio >= 1.2 -> Được phép mở lệnh
+        state_ok, allowed_ok = engine._classify_regime(bar_test, adx=32.0, chop=30.0, atr_ratio=1.3)
+        assert allowed_ok is True
+

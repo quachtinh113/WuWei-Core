@@ -59,7 +59,7 @@ class PortfolioAllocator:
         self,
         symbols: List[str],
         correlation_lookback: int = 40,
-        max_correlation_threshold: float = 0.75,
+        max_correlation_threshold: float = 0.65,
     ):
         self.symbols = symbols
         self.lookback = correlation_lookback
@@ -90,7 +90,13 @@ class PortfolioAllocator:
             self.corr_matrix = df_returns.corr()
 
     def get_correlation(self, sym_a: str, sym_b: str) -> float:
-        """Lấy hệ số tương quan giữa 2 cặp tài sản"""
+        """
+        Lấy hệ số tương quan giữa 2 cặp tài sản.
+        Nếu ma trận trượt chưa đủ nến (Cold-Start), sử dụng ma trận tương quan cấu trúc tiền tệ:
+        - Các cặp có USD ở vế sau (EURUSD, GBPUSD, AUDUSD, NZDUSD): +0.85
+        - Các cặp có USD ở vế trước (USDCAD, USDJPY, USDCHF): +0.80
+        - Một cặp USD vế trước & một cặp USD vế sau: -0.85 (Tương quan nghịch đảo mạnh)
+        """
         if (
             not self.corr_matrix.empty
             and sym_a in self.corr_matrix.columns
@@ -99,17 +105,48 @@ class PortfolioAllocator:
             val = self.corr_matrix.loc[sym_a, sym_b]
             if not np.isnan(val):
                 return float(val)
-        # Giá trị mặc định theo nhóm ngành nếu chưa đủ nến
+
         sec_a = SECTOR_MAP.get(sym_a, "OTHER")
         sec_b = SECTOR_MAP.get(sym_b, "OTHER")
+
+        # 1. Xử lý chuyên sâu cấu trúc tương quan Forex (USD Exposure)
+        is_fx_a = "FX" in sec_a
+        is_fx_b = "FX" in sec_b
+
+        if is_fx_a and is_fx_b:
+            clean_a = sym_a.replace("m", "").replace("_", "").upper()
+            clean_b = sym_b.replace("m", "").replace("_", "").upper()
+
+            a_quote_usd = clean_a.endswith("USD")  # EURUSD, GBPUSD, AUDUSD, NZDUSD
+            a_base_usd = clean_a.startswith("USD")  # USDCAD, USDJPY, USDCHF
+
+            b_quote_usd = clean_b.endswith("USD")
+            b_base_usd = clean_b.startswith("USD")
+
+            if a_quote_usd and b_quote_usd:
+                return 0.85
+            if a_base_usd and b_base_usd:
+                return 0.80
+            if (a_quote_usd and b_base_usd) or (a_base_usd and b_quote_usd):
+                return -0.85
+
+            # Cặp chéo cùng rổ định giá (ví dụ EURJPY và GBPJPY)
+            if clean_a[-3:] == clean_b[-3:]:
+                return 0.75
+            return 0.60
+
+        # 2. Xử lý các nhóm ngành khác
         if sec_a == sec_b:
             if sec_a == "ENERGIES":
                 return 0.90
             if sec_a == "EQUITY_INDEX":
                 return 0.85
             if sec_a == "METALS":
-                return 0.70
+                return 0.80
+            if sec_a == "CRYPTO":
+                return 0.80
             return 0.60
+
         return 0.15
 
     def check_correlation_conflict(
@@ -121,6 +158,7 @@ class PortfolioAllocator:
         """
         Kiểm tra xem có bị xung đột tương quan quá mức với vị thế đang mở không:
         Nếu một cặp có tương quan >= max_corr đang mở cùng chiều -> Từ chối để chống dồn rủi ro.
+        Nếu có tương quan <= -max_corr đang mở ngược chiều -> Cùng bản chất dồn cược, từ chối.
         """
         for sym, pos in open_positions.items():
             if sym == candidate_symbol or pos.side == PositionSide.FLAT:
@@ -129,18 +167,18 @@ class PortfolioAllocator:
             pos_side_str = "BUY" if pos.side == PositionSide.LONG else "SELL"
             corr = self.get_correlation(candidate_symbol, sym)
 
-            # Cùng chiều và tương quan dương cao
+            # Cùng chiều và tương quan thuận cao (>= max_corr)
             if candidate_side == pos_side_str and corr >= self.max_corr:
                 return True, (
-                    f"Concentration Risk: {candidate_symbol} ({candidate_side}) has high correlation "
-                    f"({corr:.2f}) with open {sym} ({pos_side_str})"
+                    f"Cluster Concentration Risk: {candidate_symbol} ({candidate_side}) has high positive correlation "
+                    f"({corr:+.2f} >= {self.max_corr:.2f}) with open position {sym} ({pos_side_str})"
                 )
 
-            # Ngược chiều và tương quan âm cao (tương đương cùng chiều)
+            # Ngược chiều nhưng tương quan nghịch cao (<= -max_corr) -> Thực chất là cùng chiều phơi nhiễm vĩ mô
             if candidate_side != pos_side_str and corr <= -self.max_corr:
                 return True, (
-                    f"Concentration Risk: {candidate_symbol} ({candidate_side}) has inverse correlation "
-                    f"({corr:.2f}) with open {sym} ({pos_side_str})"
+                    f"Cluster Concentration Risk: {candidate_symbol} ({candidate_side}) has high inverse correlation "
+                    f"({corr:+.2f} <= -{self.max_corr:.2f}) with open position {sym} ({pos_side_str})"
                 )
 
         return False, None

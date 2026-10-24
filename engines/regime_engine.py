@@ -185,16 +185,29 @@ class RegimeEngine:
         """
         Quy tắc phân loại chế độ thị trường:
         - ADX < 20 và CHOP > 61.8: NO_TREND (Trạng thái Vô Vi, tuyệt đối không mở vị thế mới).
-        - ADX >= 25 và CHOP < 38.2: Kích hoạt xu hướng (TRENDING_BULL / TRENDING_BEAR).
+        - ADX >= 25 và CHOP < 38.2: Kích hoạt xu hướng chuẩn.
+        - Riêng nhóm METALS (Vàng/Bạc): Siết chặt bộ lọc Whipsaw phiên Âu-Mỹ:
+          Yêu cầu ADX >= 30.0 VÀ ATR Ratio >= 1.2 (Thanh khoản bùng nổ > 1.2 lần trung bình 20 phiên).
         - Vùng còn lại: RANGING / chuyển tiếp (Không vào lệnh mới).
         """
-        # Kiểm tra điều kiện NO_TREND (Vô Vi)
+        # 1. Kiểm tra điều kiện NO_TREND (Vô Vi)
         if adx < self.config.adx_no_trend_threshold and chop > self.config.chop_no_trend_threshold:
             return RegimeState.NO_TREND, False
 
-        # Kiểm tra điều kiện Trend bùng nổ
-        if adx >= self.config.adx_trend_threshold and chop < self.config.chop_trend_threshold:
-            # Xác định hướng xu hướng qua vị thế giá so với vùng trung bình 50 nến
+        # 2. Nhận diện nhóm tài sản Kim loại quý (Metals: XAUUSD, XAGUSD)
+        clean_sym = bar.symbol.replace("m", "").replace("_", "").upper()
+        is_metal = clean_sym in ("XAUUSD", "XAGUSD", "GOLD", "SILVER") or "XAU" in clean_sym or "XAG" in clean_sym
+
+        # Bộ lọc Whipsaw phiên Âu-Mỹ cho Kim loại quý:
+        # Ngưỡng ADX nâng lên 30.0 và ATR Ratio phải đạt ít nhất 1.2 (ATR bung nén)
+        target_adx = 30.0 if is_metal else self.config.adx_trend_threshold
+
+        if is_metal and atr_ratio < 1.2:
+            return RegimeState.RANGING, False
+
+        # 3. Kiểm tra điều kiện Trend bùng nổ
+        if adx >= target_adx and chop < self.config.chop_trend_threshold:
+            # Xác định hướng xu hướng qua vị thế giá so với vùng trung bình 20 nến
             if len(self.bars) >= 20:
                 sma_mid = float(np.mean([b.close for b in list(self.bars)[-20:]]))
                 if bar.close >= sma_mid:

@@ -182,6 +182,14 @@ class RiskEngine:
 
         # 4. Tính toán Định cỡ Vị thế Biến động (Volatility Sizing)
         atr_n = max(signal.atr, 1e-4)
+
+        # Áp dụng Khóa Volatility Floor riêng cho XAUUSD (Vàng) & Kim loại quý
+        clean_sym = symbol.replace("m", "").replace("_", "").upper()
+        if clean_sym in ("XAUUSD", "GOLD") or "XAU" in clean_sym:
+            # Ngưỡng sàn biến động cho Vàng: bảo vệ chống nén biên độ dưới 0.3% thị giá hoặc tối thiểu 8.0 USD
+            atr_floor = max(current_price * 0.003, 8.0)
+            atr_n = max(atr_n, atr_floor)
+
         sl_distance = self.config.stop_loss_atr_mult * atr_n
 
         if self.carver_config.enabled and symbol in self.carver_sizers:
@@ -189,6 +197,12 @@ class RiskEngine:
             # Phương pháp Định Lượng Robert Carver (pysystemtrade)
             # -------------------------------------------------------------
             price_vol = self.carver_vol_estimators[symbol].update(current_price)
+
+            # Volatility Floor cho Carver price_vol trên Vàng
+            if clean_sym in ("XAUUSD", "GOLD") or "XAU" in clean_sym:
+                price_vol_floor = max(current_price * 0.003, 8.0)
+                price_vol = max(price_vol, price_vol_floor)
+
             sizer = self.carver_sizers[symbol]
 
             # Xác định Carver Forecast (sử dụng multi-horizon ensemble hoặc quy đổi từ breakout)
@@ -221,7 +235,11 @@ class RiskEngine:
             if abs(resolved_lots) < spec.min_lot or abs(resolved_lots - current_lots) < spec.lot_step:
                 return None, None
 
+            # Tích hợp hàm min() đảm bảo không bao giờ vượt trần max_lot cấu hình
             clipped_lots = abs(resolved_lots)
+            clipped_lots = min(clipped_lots, spec.max_lot)
+            clipped_lots = float(np.clip(clipped_lots, spec.min_lot, spec.max_lot))
+
             order_side = OrderSide.BUY if resolved_lots > 0 else OrderSide.SELL
             sizing_reason = (
                 f"Carver Sizing: {clipped_lots} lots | Forecast={forecast_val:+.1f} | "
@@ -241,7 +259,10 @@ class RiskEngine:
             step = spec.lot_step
             rounded_lots = math.floor(raw_lots / step) * step
             rounded_lots = round(rounded_lots, 4)
-            clipped_lots = float(np.clip(rounded_lots, spec.min_lot, spec.max_lot))
+
+            # Tích hợp hàm min() đảm bảo không bao giờ vượt trần max_lot cấu hình
+            clipped_lots = min(rounded_lots, spec.max_lot)
+            clipped_lots = float(np.clip(clipped_lots, spec.min_lot, spec.max_lot))
 
             if clipped_lots < spec.min_lot:
                 return None, None
