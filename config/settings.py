@@ -59,6 +59,11 @@ class RiskConfig(BaseModel):
     allow_dca: bool = Field(False, description="Strictly prohibited: No DCA on negative trades")
     allow_martingale: bool = Field(False, description="Strictly prohibited: No lot doubling")
     allow_hedge: bool = Field(False, description="Strictly prohibited: No opposite hedging")
+    # Dynamic Stagnation Stop & Pre-Weekend De-risking
+    time_stop_enabled: bool = Field(True, description="Kích hoạt tự động cắt lệnh trì trệ (Dead Capital)")
+    time_stop_max_hours: int = Field(48, ge=1, le=240, description="Số giờ tối đa giữ lệnh trì trệ")
+    time_stop_min_profit_atr: float = Field(0.5, ge=0.0, le=5.0, description="Ngưỡng lợi nhuận tối thiểu tính theo ATR")
+    time_stop_friday_derisk: bool = Field(True, description="Đóng vị thế chưa có lãi lớn trước phiên đóng cửa cuối tuần")
 
     @field_validator("allow_dca", "allow_martingale", "allow_hedge")
     @classmethod
@@ -104,6 +109,22 @@ class AppSettings(BaseModel):
     execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
     carver: CarverConfigModel = Field(default_factory=CarverConfigModel)
     backtest: BacktestConfig = Field(default_factory=BacktestConfig)
+
+    @property
+    def time_stop_enabled(self) -> bool:
+        return self.risk.time_stop_enabled
+
+    @property
+    def time_stop_max_hours(self) -> int:
+        return self.risk.time_stop_max_hours
+
+    @property
+    def time_stop_min_profit_atr(self) -> float:
+        return self.risk.time_stop_min_profit_atr
+
+    @property
+    def time_stop_friday_derisk(self) -> bool:
+        return self.risk.time_stop_friday_derisk
 
     @classmethod
     def load_from_yaml(cls, config_path: Optional[str | Path] = None) -> AppSettings:

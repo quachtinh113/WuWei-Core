@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 import numpy as np
 
 from config.settings import CarverConfigModel, RiskConfig, SymbolSpecification
@@ -16,6 +16,7 @@ from core.carver_quant import CarverConfig, CarverPositionSizer, CarverPriceVola
 from core.events import CircuitBreakerEvent, OrderEvent, SignalEvent
 from core.types import (
     AccountSnapshot,
+    ExitReason,
     OrderSide,
     OrderType,
     Position,
@@ -292,3 +293,59 @@ class RiskEngine:
         )
 
         return order_event, None
+
+    def evaluate_stagnation_exit(
+        self,
+        position: Any,
+        current_price: float,
+        current_time: datetime,
+        atr: float,
+        adx: float,
+        config: Optional[Any] = None
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Đánh giá vị thế có rơi vào trạng thái Giam Vốn Trì Trệ (Dead Capital) hoặc
+        rủi ro Gap cuối tuần hay không.
+        
+        Quy đổi PnL ra đơn vị ATR để chuẩn hóa rủi ro trên mọi cặp tài sản:
+        - Trả về (True, ExitReason) nếu vị thế rơi vào trạng thái Dead Capital.
+        - Trả về (False, None) nếu tiếp tục giữ lệnh ("Let profits run").
+        """
+        cfg = config or self.config
+        time_stop_enabled = getattr(cfg, "time_stop_enabled", True)
+        time_stop_max_hours = getattr(cfg, "time_stop_max_hours", 48)
+        time_stop_min_profit_atr = getattr(cfg, "time_stop_min_profit_atr", 0.5)
+        time_stop_friday_derisk = getattr(cfg, "time_stop_friday_derisk", True)
+
+        if not time_stop_enabled or atr <= 0:
+            return False, None
+
+        open_time = getattr(position, "open_time", getattr(position, "entry_time", current_time))
+        holding_hours = (current_time - open_time).total_seconds() / 3600.0
+
+        open_price = getattr(position, "open_price", getattr(position, "entry_price", current_price))
+        pos_side = getattr(position, "side", getattr(position, "type", PositionSide.LONG))
+        is_long = (
+            pos_side in (PositionSide.LONG, "BUY", "LONG", 0)
+            or str(pos_side).upper() in ("POSITIONSIDE.LONG", "BUY", "LONG", "0")
+        )
+
+        # Chuẩn hóa PnL theo ATR
+        if is_long:
+            unrealized_pnl_atr = (current_price - open_price) / atr
+        else:
+            unrealized_pnl_atr = (open_price - current_price) / atr
+
+        # 1. Pre-Weekend De-risking (Thứ Sáu, sau 20:00)
+        if time_stop_friday_derisk and current_time.weekday() == 4 and current_time.hour >= 20:
+            if unrealized_pnl_atr < time_stop_min_profit_atr:
+                return True, ExitReason.FRIDAY_DERISK.value
+
+        # 2. Dynamic Stagnation Exit
+        if holding_hours >= time_stop_max_hours:
+            # Giải phóng lệnh nếu không đạt Break-Even VÀ mất Momentum (ADX < 20)
+            if unrealized_pnl_atr < time_stop_min_profit_atr and adx < 20.0:
+                return True, ExitReason.TIME_STOP.value
+
+        return False, None
+

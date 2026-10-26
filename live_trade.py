@@ -300,6 +300,23 @@ def main():
                                 notifier.send_position_closed(sym, current_pos.side.value, curr_bar.close, current_pos.unrealized_pnl, "Signal Reversal", current_pos.ticket)
                         order_status_str = f"[bold red]CLOSED (Reversal)[/]"
 
+                    # 1b. Dynamic Stagnation Exit & Pre-Weekend De-risking (Dead Capital Guard)
+                    elif (stag_eval := risk_engine.evaluate_stagnation_exit(
+                        position=current_pos,
+                        current_price=curr_bar.close,
+                        current_time=datetime.now(),
+                        atr=atr_val,
+                        adx=regime_ev.adx,
+                        config=settings.risk
+                    ))[0]:
+                        exit_reason = stag_eval[1] or "TIME_STOP"
+                        comment = f"WuWei {exit_reason}"
+                        console.print(f"[bold yellow]⏳ STAGNATION EXIT TRIGGERED ON {sym}:[/] Reason: {exit_reason} (Ticket #{current_pos.ticket})")
+                        if is_live_mode and current_pos.ticket:
+                            if connector.close_position(current_pos.ticket, comment=comment):
+                                notifier.send_position_closed(sym, current_pos.side.value, curr_bar.close, current_pos.unrealized_pnl, exit_reason, current_pos.ticket)
+                        order_status_str = f"[bold yellow]CLOSED ({exit_reason})[/]"
+
                     # 2. Cơ chế Khóa Hòa Vốn Tự Động (Break-Even Lock tại >= 1.5 * ATR)
                     elif sym not in be_locked_symbols:
                         be_trigger = 1.5 * atr_val

@@ -419,4 +419,111 @@ class TestInstitutionalRefinements:
             content = f.read()
             assert test_msg in content
 
+    def test_dynamic_stagnation_stop_and_friday_derisk(self, default_settings):
+        """Kiểm tra khối Dynamic Stagnation Exit & Pre-Weekend De-risking"""
+        from datetime import datetime, timedelta
+        from core.types import Position, PositionSide, ExitReason
+        from engines.risk_engine import RiskEngine
+
+        risk_engine = RiskEngine(default_settings.risk, default_settings.symbols)
+
+        # 1. Test lệnh trẻ (< 48h): Không bị cắt
+        entry_time = datetime(2026, 10, 20, 10, 0)
+        curr_time_young = entry_time + timedelta(hours=24)  # Mới giữ 24h
+        pos_buy = Position(
+            symbol="GBPUSD",
+            side=PositionSide.LONG,
+            volume=0.04,
+            entry_price=1.3000,
+            entry_time=entry_time,
+            current_price=1.3005,
+            stop_loss=1.2900,
+            unrealized_pnl=5.0
+        )
+        # atr = 0.0050, adx = 15.0 (sideway)
+        is_exit, reason = risk_engine.evaluate_stagnation_exit(
+            position=pos_buy,
+            current_price=1.3005,
+            current_time=curr_time_young,
+            atr=0.0050,
+            adx=15.0,
+            config=default_settings.risk
+        )
+        assert is_exit is False
+        assert reason is None
+
+        # 2. Test lệnh trì trệ (>= 48h, PnL < 0.5 ATR, ADX < 20.0): Kích hoạt TIME_STOP
+        curr_time_stagnant = entry_time + timedelta(hours=50)  # Đã giữ 50h
+        is_exit, reason = risk_engine.evaluate_stagnation_exit(
+            position=pos_buy,
+            current_price=1.3010,  # PnL = +0.0010 = 0.2 ATR (< 0.5 ATR)
+            current_time=curr_time_stagnant,
+            atr=0.0050,
+            adx=16.0,  # ADX < 20.0 (sideway / mất momentum)
+            config=default_settings.risk
+        )
+        assert is_exit is True
+        assert reason == ExitReason.TIME_STOP.value
+
+        # 3. Test lệnh đang phát triển Trend tốt (PnL >= 0.5 ATR): GIỮ NGUYÊN (Let profits run)
+        is_exit, reason = risk_engine.evaluate_stagnation_exit(
+            position=pos_buy,
+            current_price=1.3040,  # PnL = +0.0040 = 0.8 ATR (>= 0.5 ATR)
+            current_time=curr_time_stagnant,
+            atr=0.0050,
+            adx=16.0,
+            config=default_settings.risk
+        )
+        assert is_exit is False
+        assert reason is None
+
+        # 4. Test lệnh có momentum mạnh (ADX >= 20.0): GIỮ NGUYÊN (cho trend phát triển)
+        is_exit, reason = risk_engine.evaluate_stagnation_exit(
+            position=pos_buy,
+            current_price=1.3010,
+            current_time=curr_time_stagnant,
+            atr=0.0050,
+            adx=28.0,  # ADX >= 20.0
+            config=default_settings.risk
+        )
+        assert is_exit is False
+        assert reason is None
+
+        # 5. Test Pre-Weekend De-risking: Thứ Sáu sau 20:00 với PnL < 0.5 ATR
+        # 2026-10-23 là thứ Sáu (weekday() == 4)
+        friday_21h = datetime(2026, 10, 23, 21, 0)
+        is_exit, reason = risk_engine.evaluate_stagnation_exit(
+            position=pos_buy,
+            current_price=1.3010,  # PnL = 0.2 ATR (< 0.5 ATR)
+            current_time=friday_21h,
+            atr=0.0050,
+            adx=25.0,  # Dù ADX cao nhưng cuối tuần phải de-risk
+            config=default_settings.risk
+        )
+        assert is_exit is True
+        assert reason == ExitReason.FRIDAY_DERISK.value
+
+        # 6. Test Short Position (Bán) trì trệ:
+        pos_sell = Position(
+            symbol="AUDUSD",
+            side=PositionSide.SHORT,
+            volume=0.04,
+            entry_price=0.7000,
+            entry_time=entry_time,
+            current_price=0.6995,  # Lãi nhẹ +0.0005 = 0.1 ATR (< 0.5 ATR)
+            stop_loss=0.7100,
+            unrealized_pnl=2.0
+        )
+        is_exit_sell, reason_sell = risk_engine.evaluate_stagnation_exit(
+            position=pos_sell,
+            current_price=0.6995,
+            current_time=curr_time_stagnant,
+            atr=0.0050,
+            adx=14.0,
+            config=default_settings.risk
+        )
+        assert is_exit_sell is True
+        assert reason_sell == ExitReason.TIME_STOP.value
+
+
 

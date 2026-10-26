@@ -286,6 +286,11 @@ risk:
   allow_dca: false               # Nghiêm cấm DCA nhồi lệnh âm
   allow_martingale: false        # Nghiêm cấm Martingale gấp thếp
   allow_hedge: false             # Nghiêm cấm Hedging đối ứng
+  # Dynamic Stagnation Time-Stop & Pre-Weekend De-risking (Dead Capital Guard)
+  time_stop_enabled: true
+  time_stop_max_hours: 48
+  time_stop_min_profit_atr: 0.5
+  time_stop_friday_derisk: true
 
 # 4. Hành vô vi - Execution & Trailing Exit Engine
 execution:

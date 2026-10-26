@@ -62,6 +62,8 @@ class ExitReason(str, Enum):
     SIGNAL_REVERSAL = "SIGNAL_REVERSAL"
     CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
     MANUAL = "MANUAL"
+    TIME_STOP = "TIME_STOP"
+    FRIDAY_DERISK = "FRIDAY_DERISK"
 
 
 @dataclass
@@ -87,6 +89,18 @@ class Position:
     def __post_init__(self):
         self.highest_price = self.entry_price
         self.lowest_price = self.entry_price
+
+    @property
+    def open_time(self) -> datetime:
+        return self.entry_time
+
+    @property
+    def open_price(self) -> float:
+        return self.entry_price
+
+    @property
+    def type(self) -> int:
+        return 0 if self.side == PositionSide.LONG else 1
 
     def update_price(self, high: float, low: float, close: float) -> None:
         self.current_price = close
