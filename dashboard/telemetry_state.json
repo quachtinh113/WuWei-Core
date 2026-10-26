@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-24 19:07:43",
+  "timestamp": "2026-10-24 19:08:13",
   "account": {
     "login": 272576224,
     "server": "Exness-MT5Trial14",
@@ -222,10 +222,10 @@
     {
       "symbol": "BTCUSD",
       "class": "Cryptocurrency",
-      "price": 80486.87,
+      "price": 80480.98,
       "regime": "RANGING",
-      "adx": 54.9,
-      "chop": 92.6,
+      "adx": 51.8,
+      "chop": 94.4,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -233,10 +233,10 @@
     {
       "symbol": "ETHUSD",
       "class": "Cryptocurrency",
-      "price": 2360.52,
+      "price": 2360.54,
       "regime": "RANGING",
-      "adx": 72.9,
-      "chop": 94.1,
+      "adx": 71.0,
+      "chop": 95.9,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
