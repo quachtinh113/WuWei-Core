@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-27 22:48:35",
+  "timestamp": "2026-10-27 22:57:43",
   "account": {
     "login": 272576224,
     "server": "Exness-MT5Trial14",
@@ -13,7 +13,7 @@
     {
       "symbol": "XAUUSD",
       "class": "Precious Metals",
-      "price": 4061.093,
+      "price": 4063.293,
       "regime": "RANGING",
       "adx": 14.7,
       "chop": 44.0,
@@ -24,7 +24,7 @@
     {
       "symbol": "XAGUSD",
       "class": "Precious Metals",
-      "price": 54.461,
+      "price": 54.468,
       "regime": "RANGING",
       "adx": 23.5,
       "chop": 48.6,
@@ -35,7 +35,7 @@
     {
       "symbol": "EURUSD",
       "class": "FX Major",
-      "price": 1.11438,
+      "price": 1.11443,
       "regime": "RANGING",
       "adx": 45.3,
       "chop": 47.5,
@@ -46,7 +46,7 @@
     {
       "symbol": "GBPUSD",
       "class": "FX Major",
-      "price": 1.33093,
+      "price": 1.33131,
       "regime": "RANGING",
       "adx": 40.9,
       "chop": 54.0,
@@ -57,7 +57,7 @@
     {
       "symbol": "USDJPY",
       "class": "FX Major",
-      "price": 157.841,
+      "price": 157.851,
       "regime": "RANGING",
       "adx": 31.5,
       "chop": 67.2,
@@ -68,7 +68,7 @@
     {
       "symbol": "AUDUSD",
       "class": "FX Major",
-      "price": 0.70334,
+      "price": 0.70345,
       "regime": "RANGING",
       "adx": 13.4,
       "chop": 56.0,
@@ -79,7 +79,7 @@
     {
       "symbol": "USDCAD",
       "class": "FX Major",
-      "price": 1.40392,
+      "price": 1.40357,
       "regime": "RANGING",
       "adx": 12.3,
       "chop": 58.1,
@@ -90,7 +90,7 @@
     {
       "symbol": "USDCHF",
       "class": "FX Major",
-      "price": 0.82907,
+      "price": 0.82856,
       "regime": "RANGING",
       "adx": 21.7,
       "chop": 60.6,
@@ -101,7 +101,7 @@
     {
       "symbol": "NZDUSD",
       "class": "FX Major",
-      "price": 0.56927,
+      "price": 0.56917,
       "regime": "NO_TREND",
       "adx": 18.9,
       "chop": 63.1,
@@ -112,7 +112,7 @@
     {
       "symbol": "EURJPY",
       "class": "FX Cross",
-      "price": 175.897,
+      "price": 175.917,
       "regime": "RANGING",
       "adx": 16.7,
       "chop": 53.4,
@@ -123,7 +123,7 @@
     {
       "symbol": "GBPJPY",
       "class": "FX Cross",
-      "price": 210.081,
+      "price": 210.15,
       "regime": "NO_TREND",
       "adx": 12.9,
       "chop": 62.3,
@@ -134,7 +134,7 @@
     {
       "symbol": "EURGBP",
       "class": "FX Cross",
-      "price": 0.83722,
+      "price": 0.83705,
       "regime": "RANGING",
       "adx": 19.5,
       "chop": 54.4,
@@ -145,7 +145,7 @@
     {
       "symbol": "AUDJPY",
       "class": "FX Cross",
-      "price": 111.021,
+      "price": 111.042,
       "regime": "RANGING",
       "adx": 22.9,
       "chop": 52.9,
@@ -156,7 +156,7 @@
     {
       "symbol": "US30",
       "class": "Equity Index",
-      "price": 52468.9,
+      "price": 52475.9,
       "regime": "RANGING",
       "adx": 15.7,
       "chop": 54.4,
@@ -167,7 +167,7 @@
     {
       "symbol": "US500",
       "class": "Equity Index",
-      "price": 7734.08,
+      "price": 7737.07,
       "regime": "RANGING",
       "adx": 13.7,
       "chop": 57.2,
@@ -178,7 +178,7 @@
     {
       "symbol": "USTEC",
       "class": "Equity Index",
-      "price": 29670.19,
+      "price": 29695.69,
       "regime": "RANGING",
       "adx": 16.6,
       "chop": 49.7,
@@ -189,7 +189,7 @@
     {
       "symbol": "DE30",
       "class": "Equity Index",
-      "price": 25652.2,
+      "price": 25645.2,
       "regime": "RANGING",
       "adx": 21.5,
       "chop": 45.7,
@@ -200,7 +200,7 @@
     {
       "symbol": "USOIL",
       "class": "Energy Commodity",
-      "price": 99.387,
+      "price": 99.611,
       "regime": "RANGING",
       "adx": 12.1,
       "chop": 54.1,
@@ -211,7 +211,7 @@
     {
       "symbol": "UKOIL",
       "class": "Energy Commodity",
-      "price": 109.382,
+      "price": 109.683,
       "regime": "RANGING",
       "adx": 9.9,
       "chop": 52.9,
@@ -222,7 +222,7 @@
     {
       "symbol": "BTCUSD",
       "class": "Cryptocurrency",
-      "price": 80500.02,
+      "price": 80469.05,
       "regime": "RANGING",
       "adx": 24.6,
       "chop": 65.2,
@@ -233,7 +233,7 @@
     {
       "symbol": "ETHUSD",
       "class": "Cryptocurrency",
-      "price": 2346.05,
+      "price": 2344.78,
       "regime": "RANGING",
       "adx": 25.7,
       "chop": 61.5,
