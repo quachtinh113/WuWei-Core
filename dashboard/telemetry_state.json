@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-10-24 19:08:13",
+  "timestamp": "2026-10-27 22:48:35",
   "account": {
     "login": 272576224,
     "server": "Exness-MT5Trial14",
-    "balance": 9880.17,
-    "equity": 9873.29,
-    "free_margin": 9869.2,
-    "daily_drawdown_pct": 0.0002612428069628222,
+    "balance": 9850.2,
+    "equity": 9850.2,
+    "free_margin": 9850.2,
+    "daily_drawdown_pct": 0.0,
     "circuit_breaker_active": false
   },
   "assets": [
     {
       "symbol": "XAUUSD",
       "class": "Precious Metals",
-      "price": 3996.057,
+      "price": 4061.093,
       "regime": "RANGING",
-      "adx": 59.6,
-      "chop": 100.0,
+      "adx": 14.7,
+      "chop": 44.0,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -24,10 +24,10 @@
     {
       "symbol": "XAGUSD",
       "class": "Precious Metals",
-      "price": 53.907,
+      "price": 54.461,
       "regime": "RANGING",
-      "adx": 43.2,
-      "chop": 100.0,
+      "adx": 23.5,
+      "chop": 48.6,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -35,10 +35,10 @@
     {
       "symbol": "EURUSD",
       "class": "FX Major",
-      "price": 1.12023,
-      "regime": "NO_TREND",
-      "adx": 1.5,
-      "chop": 100.0,
+      "price": 1.11438,
+      "regime": "RANGING",
+      "adx": 45.3,
+      "chop": 47.5,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -46,21 +46,21 @@
     {
       "symbol": "GBPUSD",
       "class": "FX Major",
-      "price": 1.3374,
+      "price": 1.33093,
       "regime": "RANGING",
-      "adx": 25.3,
-      "chop": 100.0,
+      "adx": 40.9,
+      "chop": 54.0,
       "forecast": 0.0,
       "action": "NONE",
-      "status": "LONG 0.04L ($-8.24)"
+      "status": "FLAT"
     },
     {
       "symbol": "USDJPY",
       "class": "FX Major",
-      "price": 156.836,
-      "regime": "NO_TREND",
-      "adx": 18.0,
-      "chop": 100.0,
+      "price": 157.841,
+      "regime": "RANGING",
+      "adx": 31.5,
+      "chop": 67.2,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -68,21 +68,21 @@
     {
       "symbol": "AUDUSD",
       "class": "FX Major",
-      "price": 0.70352,
-      "regime": "NO_TREND",
-      "adx": 16.8,
-      "chop": 100.0,
+      "price": 0.70334,
+      "regime": "RANGING",
+      "adx": 13.4,
+      "chop": 56.0,
       "forecast": 0.0,
       "action": "NONE",
-      "status": "LONG 0.04L ($+1.36)"
+      "status": "FLAT"
     },
     {
       "symbol": "USDCAD",
       "class": "FX Major",
-      "price": 1.40052,
-      "regime": "NO_TREND",
-      "adx": 0.2,
-      "chop": 100.0,
+      "price": 1.40392,
+      "regime": "RANGING",
+      "adx": 12.3,
+      "chop": 58.1,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -90,10 +90,10 @@
     {
       "symbol": "USDCHF",
       "class": "FX Major",
-      "price": 0.82504,
-      "regime": "NO_TREND",
-      "adx": 18.1,
-      "chop": 100.0,
+      "price": 0.82907,
+      "regime": "RANGING",
+      "adx": 21.7,
+      "chop": 60.6,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -101,10 +101,10 @@
     {
       "symbol": "NZDUSD",
       "class": "FX Major",
-      "price": 0.57002,
-      "regime": "RANGING",
-      "adx": 21.8,
-      "chop": 100.0,
+      "price": 0.56927,
+      "regime": "NO_TREND",
+      "adx": 18.9,
+      "chop": 63.1,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -112,10 +112,10 @@
     {
       "symbol": "EURJPY",
       "class": "FX Cross",
-      "price": 175.676,
+      "price": 175.897,
       "regime": "RANGING",
-      "adx": 25.3,
-      "chop": 100.0,
+      "adx": 16.7,
+      "chop": 53.4,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -123,10 +123,10 @@
     {
       "symbol": "GBPJPY",
       "class": "FX Cross",
-      "price": 209.763,
-      "regime": "RANGING",
-      "adx": 24.1,
-      "chop": 100.0,
+      "price": 210.081,
+      "regime": "NO_TREND",
+      "adx": 12.9,
+      "chop": 62.3,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -134,10 +134,10 @@
     {
       "symbol": "EURGBP",
       "class": "FX Cross",
-      "price": 0.83743,
+      "price": 0.83722,
       "regime": "RANGING",
-      "adx": 24.8,
-      "chop": 100.0,
+      "adx": 19.5,
+      "chop": 54.4,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -145,10 +145,10 @@
     {
       "symbol": "AUDJPY",
       "class": "FX Cross",
-      "price": 110.316,
-      "regime": "NO_TREND",
-      "adx": 6.5,
-      "chop": 100.0,
+      "price": 111.021,
+      "regime": "RANGING",
+      "adx": 22.9,
+      "chop": 52.9,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -156,10 +156,10 @@
     {
       "symbol": "US30",
       "class": "Equity Index",
-      "price": 52296.3,
+      "price": 52468.9,
       "regime": "RANGING",
-      "adx": 54.3,
-      "chop": 100.0,
+      "adx": 15.7,
+      "chop": 54.4,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -167,10 +167,10 @@
     {
       "symbol": "US500",
       "class": "Equity Index",
-      "price": 7640.57,
+      "price": 7734.08,
       "regime": "RANGING",
-      "adx": 28.9,
-      "chop": 100.0,
+      "adx": 13.7,
+      "chop": 57.2,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -178,10 +178,10 @@
     {
       "symbol": "USTEC",
       "class": "Equity Index",
-      "price": 29016.91,
-      "regime": "NO_TREND",
-      "adx": 12.1,
-      "chop": 100.0,
+      "price": 29670.19,
+      "regime": "RANGING",
+      "adx": 16.6,
+      "chop": 49.7,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -189,10 +189,10 @@
     {
       "symbol": "DE30",
       "class": "Equity Index",
-      "price": 25143.4,
+      "price": 25652.2,
       "regime": "RANGING",
-      "adx": 46.0,
-      "chop": 100.0,
+      "adx": 21.5,
+      "chop": 45.7,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -200,10 +200,10 @@
     {
       "symbol": "USOIL",
       "class": "Energy Commodity",
-      "price": 102.697,
+      "price": 99.387,
       "regime": "RANGING",
-      "adx": 48.3,
-      "chop": 100.0,
+      "adx": 12.1,
+      "chop": 54.1,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -211,10 +211,10 @@
     {
       "symbol": "UKOIL",
       "class": "Energy Commodity",
-      "price": 111.944,
+      "price": 109.382,
       "regime": "RANGING",
-      "adx": 51.7,
-      "chop": 100.0,
+      "adx": 9.9,
+      "chop": 52.9,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -222,10 +222,10 @@
     {
       "symbol": "BTCUSD",
       "class": "Cryptocurrency",
-      "price": 80480.98,
+      "price": 80500.02,
       "regime": "RANGING",
-      "adx": 51.8,
-      "chop": 94.4,
+      "adx": 24.6,
+      "chop": 65.2,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
@@ -233,10 +233,10 @@
     {
       "symbol": "ETHUSD",
       "class": "Cryptocurrency",
-      "price": 2360.54,
+      "price": 2346.05,
       "regime": "RANGING",
-      "adx": 71.0,
-      "chop": 95.9,
+      "adx": 25.7,
+      "chop": 61.5,
       "forecast": 0.0,
       "action": "NONE",
       "status": "FLAT"
