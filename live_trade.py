@@ -36,6 +36,7 @@ if hasattr(sys.stderr, "reconfigure"):
 load_dotenv(CURRENT_DIR / ".env")
 
 from config.settings import get_settings
+from core.events import SignalEvent
 from core.types import ExitReason, Position, PositionSide, RegimeState, SignalAction
 from engines.execution_engine import ExecutionEngine
 from engines.portfolio_allocator import PortfolioAllocator, SECTOR_MAP
@@ -199,15 +200,23 @@ def main():
     # Khởi tạo Portfolio Allocator
     allocator = PortfolioAllocator(active_symbols, correlation_lookback=40, max_correlation_threshold=0.75)
 
-    # Warmup từng Symbol bằng 60 nến quá khứ
+    last_closed_bar_times: Dict[str, datetime] = {}
+    last_regime_events: Dict[str, Any] = {}
+    last_signal_events: Dict[str, Any] = {}
+
+    # Warmup từng Symbol bằng 60 nến quá khứ (chỉ nạp các nến ĐÃ ĐÓNG hoàn chỉnh)
     for sym in active_symbols:
         warmup_bars = connector.fetch_historical_bars(sym, timeframe_str=tf, count=60)
-        if warmup_bars:
-            for b in warmup_bars:
+        if warmup_bars and len(warmup_bars) >= 2:
+            completed_warmup = warmup_bars[:-1]
+            for b in completed_warmup:
                 reg_ev = regime_engines[sym].update(b)
-                signal_engines[sym].update(b, reg_ev, PositionSide.FLAT)
+                sig_ev = signal_engines[sym].update(b, reg_ev, PositionSide.FLAT)
+            last_closed_bar_times[sym] = completed_warmup[-1].timestamp
+            last_regime_events[sym] = reg_ev
+            last_signal_events[sym] = sig_ev
             # Cung cấp dữ liệu giá nến đóng cửa cho Allocator
-            for b in warmup_bars[-30:]:
+            for b in completed_warmup[-30:]:
                 allocator.update_prices({sym: b.close})
 
     console.print(f"[bold green]✔[/] Warmup completed for all {len(active_symbols)} assets!")
@@ -259,21 +268,71 @@ def main():
 
             # Quét từng tài sản trong danh mục
             for sym in active_symbols:
-                latest_bars = connector.fetch_historical_bars(sym, timeframe_str=tf, count=2)
-                if not latest_bars:
+                latest_bars = connector.fetch_historical_bars(sym, timeframe_str=tf, count=3)
+                if not latest_bars or len(latest_bars) < 2:
                     continue
 
+                last_completed = latest_bars[-2]
                 curr_bar = latest_bars[-1]
                 price_snapshot[sym] = curr_bar.close
-
-                regime_ev = regime_engines[sym].update(curr_bar)
                 current_pos = open_positions.get(sym)
                 pos_side = current_pos.side if current_pos else PositionSide.FLAT
 
-                signal_ev = signal_engines[sym].update(curr_bar, regime_ev, pos_side)
+                # 1. Chỉ nạp nến mới vào Engine khi nến H1 trước đó thực sự đóng cửa
+                if sym not in last_closed_bar_times or last_completed.timestamp > last_closed_bar_times[sym]:
+                    last_closed_bar_times[sym] = last_completed.timestamp
+                    reg_ev = regime_engines[sym].update(last_completed)
+                    sig_ev = signal_engines[sym].update(last_completed, reg_ev, pos_side)
+                    last_regime_events[sym] = reg_ev
+                    last_signal_events[sym] = sig_ev
+                else:
+                    reg_ev = last_regime_events.get(sym)
+                    sig_ev = last_signal_events.get(sym)
+
+                if not reg_ev or not sig_ev:
+                    continue
+
+                regime_ev = reg_ev
+
                 spec = settings.symbols.get(sym)
                 pip_size = spec.pip_size if spec else 0.0001
-                atr_val = max(signal_ev.atr, 1e-4)
+                atr_val = max(sig_ev.atr, 1e-4)
+
+                # 2. Đánh giá tín hiệu Live Tick theo giá thực tế curr_bar.close so với Donchian Bands chuẩn
+                curr_action = SignalAction.NONE
+                curr_reason = "Price within Donchian 20 bands"
+                if current_pos and current_pos.side != PositionSide.FLAT:
+                    if current_pos.side == PositionSide.LONG and curr_bar.close < sig_ev.exit_donchian_low:
+                        curr_action = SignalAction.CLOSE_BUY
+                        curr_reason = f"Exit Long: Close ({curr_bar.close:.2f}) < Exit Low ({sig_ev.exit_donchian_low:.2f})"
+                    elif current_pos.side == PositionSide.SHORT and curr_bar.close > sig_ev.exit_donchian_high:
+                        curr_action = SignalAction.CLOSE_SELL
+                        curr_reason = f"Exit Short: Close ({curr_bar.close:.2f}) > Exit High ({sig_ev.exit_donchian_high:.2f})"
+                elif pos_side == PositionSide.FLAT:
+                    if reg_ev.is_trading_allowed:
+                        if curr_bar.close > sig_ev.entry_donchian_high:
+                            curr_action = SignalAction.BUY
+                            curr_reason = f"Donchian Bullish Breakout: Live ({curr_bar.close:.2f}) > High20 ({sig_ev.entry_donchian_high:.2f})"
+                        elif curr_bar.close < sig_ev.entry_donchian_low:
+                            curr_action = SignalAction.SELL
+                            curr_reason = f"Donchian Bearish Breakout: Live ({curr_bar.close:.2f}) < Low20 ({sig_ev.entry_donchian_low:.2f})"
+                    else:
+                        curr_reason = f"Vô Vi State: Trading barred by RegimeEngine ({reg_ev.state.value})"
+
+                signal_ev = SignalEvent(
+                    symbol=sym,
+                    timestamp=curr_bar.timestamp,
+                    action=curr_action,
+                    entry_donchian_high=sig_ev.entry_donchian_high,
+                    entry_donchian_low=sig_ev.entry_donchian_low,
+                    exit_donchian_high=sig_ev.exit_donchian_high,
+                    exit_donchian_low=sig_ev.exit_donchian_low,
+                    atr=atr_val,
+                    regime_state=reg_ev.state,
+                    reason=curr_reason,
+                    carver_forecast=sig_ev.carver_forecast,
+                    rule_forecasts=sig_ev.rule_forecasts,
+                )
 
                 order_status_str = "FLAT"
 
@@ -471,6 +530,19 @@ def main():
                 )
 
             console.print(table)
+
+            # Ghi nhat ky chu ky quet vao file live_trade.log
+            try:
+                active_pos_count = len([p for p in open_positions.values() if p.side != PositionSide.FLAT])
+                log_line = (
+                    f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] "
+                    f"Scan Cycle OK | Balance: ${current_balance:,.2f} | Equity: ${current_equity:,.2f} | "
+                    f"Positions: {active_pos_count} | Triggered: {len(triggered_orders)}\n"
+                )
+                with open(CURRENT_DIR / "live_trade.log", "a", encoding="utf-8") as lf:
+                    lf.write(log_line)
+            except Exception:
+                pass
 
             # Thực thi các lệnh kích hoạt
             if triggered_orders:

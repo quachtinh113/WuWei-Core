@@ -55,7 +55,7 @@ class WuWeiWatchdog:
     def __init__(
         self,
         check_interval: int = 30,
-        heartbeat_timeout: int = 180,
+        heartbeat_timeout: int = 300,
         max_memory_mb: float = 1500.0,
     ):
         self.check_interval = check_interval
@@ -177,13 +177,13 @@ class WuWeiWatchdog:
             if sys.platform == "win32":
                 # Khởi động dưới tiến trình độc lập không phụ thuộc watchdog
                 subprocess.Popen(
-                    [str(self.start_bot_script)],
+                    f'"{self.start_bot_script}" --force',
                     creationflags=subprocess.CREATE_NEW_CONSOLE,
                     shell=True,
                     cwd=str(CURRENT_DIR),
                 )
             else:
-                subprocess.Popen(["bash", str(self.start_bot_script)], cwd=str(CURRENT_DIR))
+                subprocess.Popen(["bash", str(self.start_bot_script), "--force"], cwd=str(CURRENT_DIR))
             logger.info("Lệnh khởi động Bot đã được phát đi thành công.")
         except Exception as e:
             logger.error(f"Không thể khởi động bot: {e}")
@@ -262,7 +262,7 @@ def parse_args():
     parser.add_argument(
         "--heartbeat-timeout",
         type=int,
-        default=180,
+        default=300,
         help="Thời gian chờ tối đa kể từ lần ghi telemetry cuối (giây)",
     )
     parser.add_argument(
