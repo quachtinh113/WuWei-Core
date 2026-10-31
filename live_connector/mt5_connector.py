@@ -51,7 +51,13 @@ class MT5Connector:
     def connect(self) -> bool:
         """Khởi tạo kết nối MT5 Terminal"""
         if self.is_connected:
-            return True
+            try:
+                acc = mt5.account_info()
+                if acc is not None:
+                    return True
+            except Exception:
+                pass
+            self.disconnect()
 
         init_args = {}
         if self.path and os.path.exists(self.path):
@@ -65,11 +71,13 @@ class MT5Connector:
         if not res:
             error = mt5.last_error()
             print(f"[MT5Connector ERROR] Initialize failed: {error}")
+            self.is_connected = False
             return False
 
         account_info = mt5.account_info()
         if account_info is None:
             print("[MT5Connector ERROR] Unable to retrieve account info")
+            self.is_connected = False
             return False
 
         self.is_connected = True
@@ -78,16 +86,27 @@ class MT5Connector:
         return True
 
     def disconnect(self) -> None:
-        if self.is_connected:
+        try:
             mt5.shutdown()
-            self.is_connected = False
-            print("[MT5Connector] Disconnected from MT5")
+        except Exception:
+            pass
+        self.is_connected = False
+        print("[MT5Connector] Disconnected from MT5")
 
     def get_account_state(self) -> Dict[str, float]:
         """Lấy số dư, vốn thực tế và ký quỹ hiện tại"""
-        if not self.is_connected:
-            self.connect()
-        info = mt5.account_info()
+        info = None
+        try:
+            info = mt5.account_info()
+        except Exception:
+            pass
+
+        if info is None:
+            self.is_connected = False
+            if not self.connect():
+                return {"balance": 0.0, "equity": 0.0, "margin": 0.0, "free_margin": 0.0}
+            info = mt5.account_info()
+
         if not info:
             return {"balance": 0.0, "equity": 0.0, "margin": 0.0, "free_margin": 0.0}
         return {

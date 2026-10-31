@@ -236,6 +236,7 @@ def main():
             acc_state = connector.get_account_state()
             if not acc_state or acc_state.get("equity", 0) <= 0:
                 console.print("[bold red]⚠ Lost MT5 connection. Reconnecting automatically...[/]")
+                connector.disconnect()
                 connector.connect()
                 time.sleep(5)
                 continue
