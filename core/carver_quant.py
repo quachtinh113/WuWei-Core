@@ -198,7 +198,9 @@ class CarverPositionSizer:
         price_vol: float,
         forecast: float,
         instrument_weight: float = 1.0,
-        daily_dd_pct: float = 0.0
+        daily_dd_pct: float = 0.0,
+        quote_to_account_fx: float = 1.0,
+        bars_per_day: float = 1.0
     ) -> Tuple[float, float, float, float]:
         """
         Trả về:
@@ -221,8 +223,9 @@ class CarverPositionSizer:
         # 2. Daily Cash Volatility Target
         daily_cash_vol_target = effective_equity * (self.config.annual_vol_target / math.sqrt(252.0))
 
-        # 3. Instrument Value Volatility in Account Currency
-        instrument_value_vol = price_vol * self.contract_size
+        # 3. Instrument Value Volatility in Account Currency (Quy đổi H1 -> Daily và Quote -> USD)
+        price_vol_daily = price_vol * math.sqrt(bars_per_day) if bars_per_day > 1.0 else price_vol
+        instrument_value_vol = price_vol_daily * self.contract_size * quote_to_account_fx
 
         if instrument_value_vol <= 1e-6:
             return 0.0, 0.0, 0.0, 0.0

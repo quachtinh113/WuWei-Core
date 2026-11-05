@@ -51,6 +51,7 @@ class SignalConfig(BaseModel):
 class RiskConfig(BaseModel):
     initial_capital: float = Field(100000.0, gt=0.0)
     risk_per_trade_pct: float = Field(0.01, gt=0.0, le=0.05, description="Max 5% per trade")
+    max_usd_risk_per_trade: float = Field(50.0, gt=0.0, description="Khống chế rủi ro cắt lỗ tối đa bằng USD cho mỗi lệnh")
     atr_period: int = Field(20, ge=5, le=100)
     stop_loss_atr_mult: float = Field(2.0, gt=0.5, le=5.0)
     max_daily_drawdown_pct: float = Field(0.03, gt=0.0, le=0.10, description="Circuit breaker threshold")

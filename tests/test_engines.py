@@ -525,5 +525,99 @@ class TestInstitutionalRefinements:
         assert is_exit_sell is True
         assert reason_sell == ExitReason.TIME_STOP.value
 
+    def test_friday_entry_freeze_mechanism(self, default_settings):
+        """Kiểm tra chốt chặn ENTRY_FREEZE sau 18:00 thứ Sáu"""
+        from engines.signal_engine import SignalEngine, check_entry_freeze
+
+        # 1. Kiểm tra hàm check_entry_freeze độc lập
+        friday_1759 = datetime(2026, 10, 30, 17, 59)
+        friday_1800 = datetime(2026, 10, 30, 18, 0)
+        friday_2030 = datetime(2026, 10, 30, 20, 30)
+        thursday_1900 = datetime(2026, 10, 29, 19, 0)
+
+        assert check_entry_freeze(friday_1759) is False
+        assert check_entry_freeze(friday_1800) is True
+        assert check_entry_freeze(friday_2030) is True
+        assert check_entry_freeze(thursday_1900) is False
+
+        # 2. Kiểm tra SignalEngine từ chối mở lệnh sau 18:00 thứ Sáu
+        sig_engine = SignalEngine(default_settings.signal)
+        # Nạp nến để qua warmup
+        for i in range(25):
+            t = friday_1800 - timedelta(hours=25 - i)
+            sig_engine.bars.append(BarEvent("EURGBP", t, 0.8300, 0.8350, 0.8290, 0.8330))
+
+        # Nến phá đỉnh lúc 18:30 thứ Sáu
+        breakout_bar = BarEvent("EURGBP", datetime(2026, 10, 30, 18, 30), 0.8330, 0.8400, 0.8320, 0.8390)
+        regime = RegimeEvent(
+            symbol="EURGBP",
+            timestamp=breakout_bar.timestamp,
+            state=RegimeState.TRENDING_BULL,
+            adx=30.0,
+            chop=30.0,
+            atr=0.0020,
+            atr_ratio=1.5,
+            is_trading_allowed=True
+        )
+
+        sig_event = sig_engine.update(breakout_bar, regime, current_position=PositionSide.FLAT)
+        # Lệnh ENTRY phải bị từ chối và Forecast bị dập tắt về 0
+        assert sig_event.action == SignalAction.NONE
+        assert "ENTRY_FREEZE" in sig_event.reason
+        assert sig_event.carver_forecast == 0.0
+
+    def test_carver_max_dollar_risk_scaling(self, default_settings):
+        """Kiểm tra khống chế trần đòn bẩy Carver Sizing không vượt quá $50 USD"""
+        from engines.risk_engine import RiskEngine
+        from core.events import SignalEvent
+        from core.types import AccountSnapshot, SignalAction, RegimeState
+
+        risk_engine = RiskEngine(default_settings.risk, default_settings.symbols)
+        account = AccountSnapshot(
+            timestamp=datetime.now(),
+            balance=10000.0,
+            equity=10000.0,
+            margin_used=0.0,
+            free_margin=10000.0,
+            daily_starting_equity=10000.0,
+            daily_drawdown_pct=0.0,
+            peak_equity=10000.0,
+            total_drawdown_pct=0.0,
+            circuit_breaker_active=False
+        )
+
+        # Cặp GBPUSD có contract_size = 100,000
+        # Giả lập SL = 2.0 * ATR = 20 pips = 0.0020
+        # Cost per lot = 0.0020 * 100,000 = $200 USD / lot
+        # Với trần MAX_USD_RISK_PER_TRADE = $50 USD -> Max lot = $50 / $200 = 0.25 lots!
+        sig = SignalEvent(
+            symbol="GBPUSD",
+            timestamp=datetime(2026, 10, 28, 14, 0),
+            action=SignalAction.SELL,
+            entry_donchian_high=1.3350,
+            entry_donchian_low=1.3250,
+            exit_donchian_high=1.3320,
+            exit_donchian_low=1.3280,
+            atr=0.0010,  # 10 pips -> SL = 20 pips
+            regime_state=RegimeState.TRENDING_BEAR,
+            reason="Carver Trend",
+            carver_forecast=-18.0  # Forecast mạnh
+        )
+
+        order, _ = risk_engine.evaluate_order(
+            signal=sig,
+            current_price=1.3275,
+            account=account,
+            open_positions={},
+            instrument_weight=0.25
+        )
+
+        assert order is not None
+        sl_dist = default_settings.risk.stop_loss_atr_mult * sig.atr
+        dollar_risk = order.volume * sl_dist * 100000.0
+        # Rủi ro cắt lỗ tuyệt đối không được vượt trần $50 USD (cho phép sai số làm tròn lot step)
+        assert dollar_risk <= 50.0 + 1e-4
+        assert order.volume <= 0.25
+
 
 

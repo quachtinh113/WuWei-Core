@@ -18,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
+import MetaTrader5 as mt5
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -42,7 +43,7 @@ from engines.execution_engine import ExecutionEngine
 from engines.portfolio_allocator import PortfolioAllocator, SECTOR_MAP
 from engines.regime_engine import RegimeEngine
 from engines.risk_engine import RiskEngine
-from engines.signal_engine import SignalEngine
+from engines.signal_engine import SignalEngine, check_entry_freeze
 from live_connector.mt5_connector import MT5Connector
 from live_connector.telegram_notifier import TelegramNotifier
 
@@ -192,10 +193,31 @@ def main():
             regime_engines[sym] = RegimeEngine(settings.regime)
             signal_engines[sym] = SignalEngine(settings.signal, fdm=fdm, forecast_cap=fcap)
 
+            # Đồng bộ động thông số sản phẩm từ Exness Broker (Triệt tiêu lệch Contract Size & Min Volume)
+            s_info = mt5.symbol_info(broker_sym)
+            if s_info and sym in settings.symbols:
+                spec = settings.symbols[sym]
+                if s_info.trade_contract_size and s_info.trade_contract_size > 0:
+                    spec.contract_size = float(s_info.trade_contract_size)
+                if s_info.volume_min and s_info.volume_min > 0:
+                    spec.min_lot = float(s_info.volume_min)
+                if s_info.volume_max and s_info.volume_max > 0:
+                    spec.max_lot = float(s_info.volume_max)
+                if s_info.volume_step and s_info.volume_step > 0:
+                    spec.lot_step = float(s_info.volume_step)
+                if s_info.trade_tick_value and s_info.trade_tick_value > 0:
+                    spec.tick_value = float(s_info.trade_tick_value)
+                if s_info.trade_tick_size and s_info.trade_tick_size > 0:
+                    spec.tick_size = float(s_info.trade_tick_size)
+
     if not active_symbols:
         console.print("[bold red]❌ No active tradeable symbols found on broker.[/]")
         connector.disconnect()
         return
+
+    # Khởi tạo Risk Engine & Execution Engine trước khi Warmup để đồng bộ đầy đủ Carver Volatility
+    risk_engine = RiskEngine(settings.risk, settings.symbols, carver_config=settings.carver)
+    execution_engine = ExecutionEngine(settings.execution, settings.symbols)
 
     # Khởi tạo Portfolio Allocator
     allocator = PortfolioAllocator(active_symbols, correlation_lookback=40, max_correlation_threshold=0.75)
@@ -212,6 +234,8 @@ def main():
             for b in completed_warmup:
                 reg_ev = regime_engines[sym].update(b)
                 sig_ev = signal_engines[sym].update(b, reg_ev, PositionSide.FLAT)
+                if sym in risk_engine.carver_vol_estimators:
+                    risk_engine.carver_vol_estimators[sym].update(b.close)
             last_closed_bar_times[sym] = completed_warmup[-1].timestamp
             last_regime_events[sym] = reg_ev
             last_signal_events[sym] = sig_ev
@@ -219,11 +243,7 @@ def main():
             for b in completed_warmup[-30:]:
                 allocator.update_prices({sym: b.close})
 
-    console.print(f"[bold green]✔[/] Warmup completed for all {len(active_symbols)} assets!")
-
-    # Khởi tạo Risk Engine & Execution Engine
-    risk_engine = RiskEngine(settings.risk, settings.symbols, carver_config=settings.carver)
-    execution_engine = ExecutionEngine(settings.execution, settings.symbols)
+    console.print(f"[bold green]✔[/] Warmup completed for all {len(active_symbols)} assets (Regime, Signal, Carver Vol)!")
 
     # Theo dõi trạng thái dời Stop Loss theo từng vị thế mở
     peak_profit_prices: Dict[str, float] = {}
@@ -284,6 +304,8 @@ def main():
                     last_closed_bar_times[sym] = last_completed.timestamp
                     reg_ev = regime_engines[sym].update(last_completed)
                     sig_ev = signal_engines[sym].update(last_completed, reg_ev, pos_side)
+                    if sym in risk_engine.carver_vol_estimators:
+                        risk_engine.carver_vol_estimators[sym].update(last_completed.close)
                     last_regime_events[sym] = reg_ev
                     last_signal_events[sym] = sig_ev
                 else:
@@ -310,7 +332,9 @@ def main():
                         curr_action = SignalAction.CLOSE_SELL
                         curr_reason = f"Exit Short: Close ({curr_bar.close:.2f}) > Exit High ({sig_ev.exit_donchian_high:.2f})"
                 elif pos_side == PositionSide.FLAT:
-                    if reg_ev.is_trading_allowed:
+                    if check_entry_freeze(curr_bar.timestamp):
+                        curr_reason = f"ENTRY_FREEZE: Pre-Weekend Risk Gate Active (Friday {curr_bar.timestamp.strftime('%H:%M')} >= 18:00 Server Time)"
+                    elif reg_ev.is_trading_allowed:
                         if curr_bar.close > sig_ev.entry_donchian_high:
                             curr_action = SignalAction.BUY
                             curr_reason = f"Donchian Bullish Breakout: Live ({curr_bar.close:.2f}) > High20 ({sig_ev.entry_donchian_high:.2f})"
@@ -420,7 +444,10 @@ def main():
                 # STAGE 2: CARVER ALLOCATION & CORRELATION RISK FILTER
                 # =============================================================
                 elif regime_ev.is_trading_allowed and signal_ev.action in (SignalAction.BUY, SignalAction.SELL):
-                    target_side_str = "BUY" if signal_ev.action == SignalAction.BUY else "SELL"
+                    if check_entry_freeze(curr_bar.timestamp):
+                        order_status_str = f"[bold cyan]LOCKED: ENTRY_FREEZE (Friday >= 18:00)[/]"
+                    else:
+                        target_side_str = "BUY" if signal_ev.action == SignalAction.BUY else "SELL"
 
                     # 1. Kiểm tra hạn mức ngành (Sector Risk Cap)
                     sec_exceeded, sec_reason = allocator.check_sector_risk_limit(sym, open_positions, max_positions_per_sector=2)
