@@ -7,7 +7,7 @@ Tuyệt đối KHÔNG DCA, KHÔNG Martingale, KHÔNG Grid.
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 import numpy as np
 
@@ -176,6 +176,17 @@ class RiskEngine:
         # 2. Xử lý tín hiệu thoát lệnh hoặc giữ nguyên
         if signal.action in (SignalAction.NONE, SignalAction.CLOSE_BUY, SignalAction.CLOSE_SELL):
             return None, None
+
+        # 2b. Kiểm tra khung giờ tử thần (Toxic Hours Filter: 02:00-04:00, 08:00, 23:00 UTC)
+        if getattr(self.config, "toxic_hours_filter_enabled", True):
+            toxic_hours = getattr(self.config, "toxic_hours", [2, 3, 8, 23])
+            sig_time = signal.timestamp
+            try:
+                utc_hour = sig_time.astimezone(timezone.utc).hour
+            except Exception:
+                utc_hour = sig_time.hour
+            if utc_hour in toxic_hours:
+                return None, None
 
         # 3. Quy tắc kiểm soát số lượng vị thế & Chống DCA/Martingale/Grid
         current_pos = open_positions.get(symbol)

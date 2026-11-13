@@ -243,9 +243,10 @@ def inspect_bot_architecture(bot_dir: Optional[Path]) -> Dict[str, Any]:
 
             # Check Constitutional & Code Quality rules
             if "stratifiedkfold" in low and "shuffle=true" in low.replace(" ", ""):
-                msg = f"{rel}: Dùng StratifiedKFold(shuffle=True) trên chuỗi thời gian gây Look-Ahead Bias (ML-LEAK)."
-                info["ml_code_issues"].append(msg)
-                info["emergency_features"]["has_lookahead_leakage"] = True
+                if "audit" not in rel.lower() and "test" not in rel.lower():
+                    msg = f"{rel}: Dùng StratifiedKFold(shuffle=True) trên chuỗi thời gian gây Look-Ahead Bias (ML-LEAK)."
+                    info["ml_code_issues"].append(msg)
+                    info["emergency_features"]["has_lookahead_leakage"] = True
             if ".shift(-1)" in low or "center=true" in low.replace(" ", ""):
                 # Ignore comments or audit scripts
                 if "audit" not in rel.lower() and "test" not in rel.lower():

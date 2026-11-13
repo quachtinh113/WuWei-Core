@@ -18,6 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from config.settings import AppSettings
 from core.events import BarEvent, RegimeEvent, SignalEvent
 from core.types import (
+    AccountSnapshot,
     ExitReason,
     OrderSide,
     Position,
@@ -34,7 +35,9 @@ from backtest.engine import EventDrivenBacktester
 
 @pytest.fixture
 def default_settings():
-    return AppSettings.load_from_yaml()
+    s = AppSettings.load_from_yaml()
+    s.risk.toxic_hours_filter_enabled = False
+    return s
 
 
 @pytest.fixture
@@ -618,6 +621,58 @@ class TestInstitutionalRefinements:
         # Rủi ro cắt lỗ tuyệt đối không được vượt trần $50 USD (cho phép sai số làm tròn lot step)
         assert dollar_risk <= 50.0 + 1e-4
         assert order.volume <= 0.25
+
+    def test_toxic_hours_filter_blocking(self, default_settings):
+        """Kiểm tra chốt chặn Toxic Hours chặn lệnh vào các giờ 02:00-04:00, 08:00, 23:00 UTC"""
+        from datetime import timezone
+        cfg = default_settings.risk.model_copy()
+        cfg.toxic_hours_filter_enabled = True
+        risk_engine = RiskEngine(cfg, default_settings.symbols)
+
+        account = AccountSnapshot(
+            timestamp=datetime.now(),
+            balance=10000.0,
+            equity=10000.0,
+            margin_used=0.0,
+            free_margin=10000.0,
+            daily_starting_equity=10000.0,
+            daily_drawdown_pct=0.0,
+            peak_equity=10000.0,
+            total_drawdown_pct=0.0,
+            circuit_breaker_active=False
+        )
+
+        # 1. Khung giờ 03:00 UTC (Toxic) -> Phải bị CHẶN (order is None)
+        sig_toxic = SignalEvent(
+            symbol="EURUSD",
+            timestamp=datetime(2026, 11, 4, 3, 0, tzinfo=timezone.utc),
+            action=SignalAction.BUY,
+            entry_donchian_high=1.1200,
+            entry_donchian_low=1.1100,
+            exit_donchian_high=1.1180,
+            exit_donchian_low=1.1120,
+            atr=0.0010,
+            regime_state=RegimeState.TRENDING_BULL,
+            reason="Toxic Hour Entry"
+        )
+        order_toxic, _ = risk_engine.evaluate_order(sig_toxic, current_price=1.1205, account=account, open_positions={})
+        assert order_toxic is None
+
+        # 2. Khung giờ 15:00 UTC (Golden Hour / US Session) -> Được phép VÀO LỆNH (order is not None)
+        sig_golden = SignalEvent(
+            symbol="EURUSD",
+            timestamp=datetime(2026, 11, 4, 15, 0, tzinfo=timezone.utc),
+            action=SignalAction.BUY,
+            entry_donchian_high=1.1200,
+            entry_donchian_low=1.1100,
+            exit_donchian_high=1.1180,
+            exit_donchian_low=1.1120,
+            atr=0.0010,
+            regime_state=RegimeState.TRENDING_BULL,
+            reason="Golden Hour Entry"
+        )
+        order_golden, _ = risk_engine.evaluate_order(sig_golden, current_price=1.1205, account=account, open_positions={})
+        assert order_golden is not None
 
 
 
