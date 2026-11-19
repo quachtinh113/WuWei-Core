@@ -7,7 +7,7 @@ Tuyệt đối KHÔNG DCA, KHÔNG Martingale, KHÔNG Grid.
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 import numpy as np
 
@@ -23,6 +23,8 @@ from core.types import (
     PositionSide,
     SignalAction,
 )
+
+MAX_USD_RISK_PER_TRADE: float = 50.0
 
 
 class RiskEngine:
@@ -175,6 +177,17 @@ class RiskEngine:
         if signal.action in (SignalAction.NONE, SignalAction.CLOSE_BUY, SignalAction.CLOSE_SELL):
             return None, None
 
+        # 2b. Kiểm tra khung giờ tử thần (Toxic Hours Filter: 02:00-04:00, 08:00, 23:00 UTC)
+        if getattr(self.config, "toxic_hours_filter_enabled", True):
+            toxic_hours = getattr(self.config, "toxic_hours", [2, 3, 8, 23])
+            sig_time = signal.timestamp
+            try:
+                utc_hour = sig_time.astimezone(timezone.utc).hour
+            except Exception:
+                utc_hour = sig_time.hour
+            if utc_hour in toxic_hours:
+                return None, None
+
         # 3. Quy tắc kiểm soát số lượng vị thế & Chống DCA/Martingale/Grid
         current_pos = open_positions.get(symbol)
         if current_pos is not None and current_pos.side != PositionSide.FLAT:
@@ -212,12 +225,28 @@ class RiskEngine:
             else:
                 forecast_val = 10.0 if signal.action == SignalAction.BUY else -10.0
 
+            # Quy đổi tỷ giá đồng yết giá (Quote Currency) sang USD
+            quote_fx = 1.0
+            clean_s = symbol.upper()
+            if clean_s.endswith("JPY"):
+                quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 150.0
+            elif clean_s.endswith("CAD"):
+                quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 1.35
+            elif clean_s.endswith("CHF"):
+                quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 0.85
+            elif clean_s.endswith("GBP"):
+                quote_fx = 1.30
+            elif spec.tick_size > 0 and spec.tick_value > 0 and spec.contract_size > 0:
+                quote_fx = (spec.tick_value / spec.tick_size) / spec.contract_size
+
             target_lots, low_buf, high_buf, vol_scalar = sizer.compute_target_and_buffers(
                 equity=account.equity,
                 price_vol=price_vol,
                 forecast=forecast_val,
                 instrument_weight=instrument_weight,
-                daily_dd_pct=account.daily_drawdown_pct
+                daily_dd_pct=account.daily_drawdown_pct,
+                quote_to_account_fx=quote_fx,
+                bars_per_day=1.0
             )
 
             current_lots = (
@@ -239,12 +268,29 @@ class RiskEngine:
             # Tích hợp hàm min() đảm bảo không bao giờ vượt trần max_lot cấu hình
             clipped_lots = abs(resolved_lots)
             clipped_lots = min(clipped_lots, spec.max_lot)
+
+            # -------------------------------------------------------------
+            # KHỐNG CHẾ TRẦN ĐÒN BẨY FOREX (MAX DOLLAR RISK <= $50)
+            # -------------------------------------------------------------
+            max_usd_risk = getattr(self.config, "max_usd_risk_per_trade", MAX_USD_RISK_PER_TRADE)
+            cost_per_lot_at_risk = sl_distance * spec.contract_size * quote_fx
+            if cost_per_lot_at_risk > 1e-6:
+                max_lots_by_risk = max_usd_risk / cost_per_lot_at_risk
+                if clipped_lots > max_lots_by_risk:
+                    # Tự động scale khối lượng xuống để tổng rủi ro cắt lỗ không vượt quá giới hạn bằng đô la Mỹ
+                    step = spec.lot_step
+                    scaled_lots = math.floor(max_lots_by_risk / step) * step
+                    scaled_lots = round(scaled_lots, 4)
+                    clipped_lots = min(clipped_lots, scaled_lots)
+
             clipped_lots = float(np.clip(clipped_lots, spec.min_lot, spec.max_lot))
+            if clipped_lots < spec.min_lot:
+                return None, None
 
             order_side = OrderSide.BUY if resolved_lots > 0 else OrderSide.SELL
             sizing_reason = (
-                f"Carver Sizing: {clipped_lots} lots | Forecast={forecast_val:+.1f} | "
-                f"VolScalar={vol_scalar:.2f} | PriceVol={price_vol:.3f} | SL={sl_distance:.2f}"
+                f"Carver Sizing: {clipped_lots} lots (Max Risk <= ${max_usd_risk:.1f}) | Forecast={forecast_val:+.1f} | "
+                f"VolScalar={vol_scalar:.2f} | PriceVol={price_vol:.3f} | SL={sl_distance:.4f}"
             )
         else:
             # -------------------------------------------------------------

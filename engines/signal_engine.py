@@ -14,6 +14,20 @@ from core.carver_quant import MultiHorizonForecastCombiner
 from core.events import BarEvent, RegimeEvent, SignalEvent
 from core.types import PositionSide, RegimeState, SignalAction
 
+ENTRY_FREEZE_HOUR: int = 18
+
+
+def check_entry_freeze(timestamp) -> bool:
+    """
+    Khóa vòng lặp Friday De-risk (ENTRY_FREEZE):
+    Tự động kích hoạt sau 18:00 Server Time mỗi thứ Sáu (weekday == 4).
+    Chốt chặn này từ chối toàn bộ tín hiệu mở mới, để risk_engine.py chuyên tâm
+    thanh lý các vị thế đang tồn đọng trước 20:45 mà không gây ra vòng lặp đóng/mở.
+    """
+    if hasattr(timestamp, "weekday") and hasattr(timestamp, "hour"):
+        return timestamp.weekday() == 4 and timestamp.hour >= ENTRY_FREEZE_HOUR
+    return False
+
 
 class SignalEngine:
     """
@@ -91,8 +105,14 @@ class SignalEngine:
 
         # 2. Kiểm tra tín hiệu mở vị thế mới (Entry Signal) nếu chưa có lệnh thoát
         if action == SignalAction.NONE and current_position == PositionSide.FLAT:
+            # Chốt chặn rủi ro cuối tuần: ENTRY_FREEZE sau 18:00 Thứ Sáu (Server Time)
+            if check_entry_freeze(bar.timestamp):
+                reason = (
+                    f"ENTRY_FREEZE: Pre-Weekend Risk Gate Active (Friday {bar.timestamp.strftime('%H:%M')} "
+                    f">= {ENTRY_FREEZE_HOUR}:00 Server Time). All new entries locked."
+                )
             # Điều kiện tiên quyết: Thiên Thời cho phép giao dịch (Không phải NO_TREND hoặc RANGING)
-            if regime.is_trading_allowed:
+            elif regime.is_trading_allowed:
                 if bar.close > entry_high:
                     action = SignalAction.BUY
                     reason = (
@@ -112,8 +132,10 @@ class SignalEngine:
 
         # Tính toán Carver Continuous Forecast (Multi-Horizon Ensemble)
         raw_carver_fc, rule_fcs = self.carver_combiner.update(bar.high, bar.low, bar.close)
-        # Triết lý Vô Vi: Nếu Thiên Thời ở trạng thái NO_TREND, dập tắt Forecast về 0
-        effective_carver_fc = raw_carver_fc if regime.is_trading_allowed else 0.0
+        # Triết lý Vô Vi & Pre-Weekend Freeze:
+        # Nếu Thiên Thời ở trạng thái NO_TREND hoặc đang trong khung ENTRY_FREEZE, dập tắt Forecast về 0
+        is_frozen = check_entry_freeze(bar.timestamp)
+        effective_carver_fc = raw_carver_fc if (regime.is_trading_allowed and not is_frozen) else 0.0
 
         # Thêm nến hiện tại vào bộ đệm sau khi tính toán tín hiệu (Bảo toàn Zero Lookahead)
         self.bars.append(bar)

@@ -51,7 +51,13 @@ class MT5Connector:
     def connect(self) -> bool:
         """Khởi tạo kết nối MT5 Terminal"""
         if self.is_connected:
-            return True
+            try:
+                acc = mt5.account_info()
+                if acc is not None:
+                    return True
+            except Exception:
+                pass
+            self.disconnect()
 
         init_args = {}
         if self.path and os.path.exists(self.path):
@@ -65,11 +71,13 @@ class MT5Connector:
         if not res:
             error = mt5.last_error()
             print(f"[MT5Connector ERROR] Initialize failed: {error}")
+            self.is_connected = False
             return False
 
         account_info = mt5.account_info()
         if account_info is None:
             print("[MT5Connector ERROR] Unable to retrieve account info")
+            self.is_connected = False
             return False
 
         self.is_connected = True
@@ -78,16 +86,27 @@ class MT5Connector:
         return True
 
     def disconnect(self) -> None:
-        if self.is_connected:
+        try:
             mt5.shutdown()
-            self.is_connected = False
-            print("[MT5Connector] Disconnected from MT5")
+        except Exception:
+            pass
+        self.is_connected = False
+        print("[MT5Connector] Disconnected from MT5")
 
     def get_account_state(self) -> Dict[str, float]:
         """Lấy số dư, vốn thực tế và ký quỹ hiện tại"""
-        if not self.is_connected:
-            self.connect()
-        info = mt5.account_info()
+        info = None
+        try:
+            info = mt5.account_info()
+        except Exception:
+            pass
+
+        if info is None:
+            self.is_connected = False
+            if not self.connect():
+                return {"balance": 0.0, "equity": 0.0, "margin": 0.0, "free_margin": 0.0}
+            info = mt5.account_info()
+
         if not info:
             return {"balance": 0.0, "equity": 0.0, "margin": 0.0, "free_margin": 0.0}
         return {
@@ -279,6 +298,25 @@ class MT5Connector:
             print(f"[MT5Connector ERROR] Cannot get tick/info for {broker_symbol}")
             return None
 
+        # 1b. DYNAMIC BROKER VOLUME VALIDATION & NORMALIZATION (Triệt tiêu Retcode 10014)
+        vol_min = float(s_info.volume_min) if s_info.volume_min and s_info.volume_min > 0 else 0.01
+        vol_max = float(s_info.volume_max) if s_info.volume_max and s_info.volume_max > 0 else 100.0
+        vol_step = float(s_info.volume_step) if s_info.volume_step and s_info.volume_step > 0 else 0.01
+
+        if float(volume) < vol_min:
+            reject_msg = (
+                f"[ORDER_REJECTED] Volume {volume:.4f}L < Minimum Broker Volume {vol_min:.2f}L "
+                f"for {broker_symbol} (Trade Dropped to Prevent Retcode 10014)"
+            )
+            print(f"[MT5Connector WARNING] {reject_msg}")
+            self._log_execution_audit(reject_msg)
+            return None
+
+        # Chuẩn hóa khối lượng theo bước nhảy lot (volume_step) và trần volume_max
+        step_mult = round(float(volume) / vol_step)
+        norm_volume = round(step_mult * vol_step, 4)
+        norm_volume = min(max(norm_volume, vol_min), vol_max)
+
         is_buy = side.upper() == "BUY"
         order_type = mt5.ORDER_TYPE_BUY if is_buy else mt5.ORDER_TYPE_SELL
         price = tick.ask if is_buy else tick.bid
@@ -294,7 +332,7 @@ class MT5Connector:
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": broker_symbol,
-            "volume": float(volume),
+            "volume": float(norm_volume),
             "type": order_type,
             "price": price,
             "sl": float(round(stop_loss, s_info.digits)),
@@ -307,7 +345,7 @@ class MT5Connector:
         }
 
         self._log_execution_audit(
-            f"[ORDER_SUBMITTED] {generic_symbol} {side} {volume:.2f}L @ {price} | "
+            f"[ORDER_SUBMITTED] {generic_symbol} {side} {norm_volume:.2f}L @ {price} | "
             f"SL={stop_loss:.5f} | Spread={cur_spread:.1f} pts | DeviationGuard={deviation} pts"
         )
 
@@ -321,7 +359,7 @@ class MT5Connector:
             return None
 
         exec_msg = (
-            f"[ORDER_FILLED] Ticket=#{result.order} | {side} {volume:.2f}L {broker_symbol} @ {result.price} | "
+            f"[ORDER_FILLED] Ticket=#{result.order} | {side} {norm_volume:.2f}L {broker_symbol} @ {result.price} | "
             f"SL={stop_loss:.5f} | Retcode={result.retcode}"
         )
         print(f"[MT5Connector SUCCESS] {exec_msg}")

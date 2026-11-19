@@ -164,34 +164,34 @@ symbols:
 
   # 4. Chỉ số chứng khoán toàn cầu (Global Equity Indices)
   US30:
-    contract_size: 10.0
+    contract_size: 1.0
     tick_size: 0.10
-    tick_value: 1.00
+    tick_value: 0.10
     point_size: 0.10
     pip_size: 1.00
-    min_lot: 0.01
+    min_lot: 0.05
     max_lot: 20.0
     lot_step: 0.01
     slippage_pips: 1.0
     commission_per_lot: 0.00
   US500:
-    contract_size: 100.0
+    contract_size: 1.0
     tick_size: 0.01
-    tick_value: 1.00
+    tick_value: 0.01
     point_size: 0.01
     pip_size: 0.10
-    min_lot: 0.01
+    min_lot: 0.14
     max_lot: 20.0
     lot_step: 0.01
     slippage_pips: 0.5
     commission_per_lot: 0.00
   USTEC:
-    contract_size: 100.0
+    contract_size: 1.0
     tick_size: 0.01
-    tick_value: 1.00
+    tick_value: 0.01
     point_size: 0.01
     pip_size: 0.10
-    min_lot: 0.01
+    min_lot: 0.05
     max_lot: 20.0
     lot_step: 0.01
     slippage_pips: 0.5
@@ -278,6 +278,7 @@ signal:
 risk:
   initial_capital: 100000.0
   risk_per_trade_pct: 0.01       # 1.0% rủi ro cho mỗi lệnh
+  max_usd_risk_per_trade: 50.0   # Khống chế rủi ro tối đa $50.0 USD cho mỗi lệnh
   atr_period: 20                 # Đơn vị biến động N = ATR(20)
   stop_loss_atr_mult: 2.0        # Hard Stop Loss = Entry ± 2.0 * N
   max_daily_drawdown_pct: 0.03   # Circuit Breaker: 3.0% Max Daily Drawdown

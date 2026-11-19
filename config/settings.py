@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, Literal, Optional
+from typing import Dict, List, Literal, Optional
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
@@ -51,6 +51,7 @@ class SignalConfig(BaseModel):
 class RiskConfig(BaseModel):
     initial_capital: float = Field(100000.0, gt=0.0)
     risk_per_trade_pct: float = Field(0.01, gt=0.0, le=0.05, description="Max 5% per trade")
+    max_usd_risk_per_trade: float = Field(50.0, gt=0.0, description="Khống chế rủi ro cắt lỗ tối đa bằng USD cho mỗi lệnh")
     atr_period: int = Field(20, ge=5, le=100)
     stop_loss_atr_mult: float = Field(2.0, gt=0.5, le=5.0)
     max_daily_drawdown_pct: float = Field(0.03, gt=0.0, le=0.10, description="Circuit breaker threshold")
@@ -64,6 +65,9 @@ class RiskConfig(BaseModel):
     time_stop_max_hours: int = Field(48, ge=1, le=240, description="Số giờ tối đa giữ lệnh trì trệ")
     time_stop_min_profit_atr: float = Field(0.5, ge=0.0, le=5.0, description="Ngưỡng lợi nhuận tối thiểu tính theo ATR")
     time_stop_friday_derisk: bool = Field(True, description="Đóng vị thế chưa có lãi lớn trước phiên đóng cửa cuối tuần")
+    # Khóa phiên giao dịch Toxic Hours (02:00-04:00, 08:00, 23:00 UTC)
+    toxic_hours_filter_enabled: bool = Field(True, description="Chặn mở lệnh mới trong các khung giờ mỏng thanh khoản / Rollover")
+    toxic_hours: List[int] = Field(default_factory=lambda: [2, 3, 8, 23], description="Danh sách các giờ UTC bị khóa mở vị thế mới")
 
     @field_validator("allow_dca", "allow_martingale", "allow_hedge")
     @classmethod
