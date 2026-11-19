@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-11-19 21:12:59",
+  "timestamp": "2026-11-19 21:13:29",
   "account": {
     "login": 272576224,
     "server": "Exness-MT5Trial14",
     "balance": 9197.42,
-    "equity": 9216.08,
-    "free_margin": 9200.34,
-    "daily_drawdown_pct": 0.013889527910129425,
+    "equity": 9217.77,
+    "free_margin": 9202.03,
+    "daily_drawdown_pct": 0.013708699760001348,
     "circuit_breaker_active": false
   },
   "assets": [
     {
       "symbol": "XAUUSD",
       "class": "Precious Metals",
-      "price": 3707.684,
+      "price": 3708.804,
       "regime": "RANGING",
       "adx": 31.1,
       "chop": 53.4,
@@ -24,7 +24,7 @@
     {
       "symbol": "XAGUSD",
       "class": "Precious Metals",
-      "price": 45.22,
+      "price": 45.252,
       "regime": "RANGING",
       "adx": 27.6,
       "chop": 55.1,
@@ -35,7 +35,7 @@
     {
       "symbol": "EURUSD",
       "class": "FX Major",
-      "price": 1.10007,
+      "price": 1.10027,
       "regime": "RANGING",
       "adx": 29.2,
       "chop": 39.8,
@@ -46,7 +46,7 @@
     {
       "symbol": "GBPUSD",
       "class": "FX Major",
-      "price": 1.3158400000000001,
+      "price": 1.31616,
       "regime": "RANGING",
       "adx": 35.4,
       "chop": 48.6,
@@ -57,7 +57,7 @@
     {
       "symbol": "USDJPY",
       "class": "FX Major",
-      "price": 159.925,
+      "price": 159.914,
       "regime": "RANGING",
       "adx": 20.4,
       "chop": 34.8,
@@ -68,7 +68,7 @@
     {
       "symbol": "AUDUSD",
       "class": "FX Major",
-      "price": 0.6713,
+      "price": 0.67148,
       "regime": "RANGING",
       "adx": 24.7,
       "chop": 44.0,
@@ -90,7 +90,7 @@
     {
       "symbol": "USDCHF",
       "class": "FX Major",
-      "price": 0.84211,
+      "price": 0.84206,
       "regime": "RANGING",
       "adx": 18.1,
       "chop": 55.5,
@@ -101,7 +101,7 @@
     {
       "symbol": "NZDUSD",
       "class": "FX Major",
-      "price": 0.55245,
+      "price": 0.55256,
       "regime": "TRENDING_BULL",
       "adx": 26.2,
       "chop": 33.8,
@@ -112,18 +112,18 @@
     {
       "symbol": "EURJPY",
       "class": "FX Cross",
-      "price": 175.943,
+      "price": 175.961,
       "regime": "TRENDING_BULL",
       "adx": 32.5,
       "chop": 30.1,
       "forecast": 10.8,
       "action": "NONE",
-      "status": "LONG 0.15L ($+16.04)"
+      "status": "LONG 0.15L ($+17.73)"
     },
     {
       "symbol": "GBPJPY",
       "class": "FX Cross",
-      "price": 210.447,
+      "price": 210.482,
       "regime": "TRENDING_BULL",
       "adx": 30.4,
       "chop": 35.1,
@@ -134,7 +134,7 @@
     {
       "symbol": "EURGBP",
       "class": "FX Cross",
-      "price": 0.83597,
+      "price": 0.8359,
       "regime": "RANGING",
       "adx": 34.6,
       "chop": 41.7,
@@ -145,7 +145,7 @@
     {
       "symbol": "AUDJPY",
       "class": "FX Cross",
-      "price": 107.361,
+      "price": 107.381,
       "regime": "RANGING",
       "adx": 27.1,
       "chop": 39.5,
@@ -156,7 +156,7 @@
     {
       "symbol": "US30",
       "class": "Equity Index",
-      "price": 50453.4,
+      "price": 50460.4,
       "regime": "RANGING",
       "adx": 23.6,
       "chop": 59.8,
@@ -167,7 +167,7 @@
     {
       "symbol": "US500",
       "class": "Equity Index",
-      "price": 7404.88,
+      "price": 7405.0,
       "regime": "RANGING",
       "adx": 17.7,
       "chop": 48.7,
@@ -178,7 +178,7 @@
     {
       "symbol": "USTEC",
       "class": "Equity Index",
-      "price": 27661.64,
+      "price": 27659.64,
       "regime": "RANGING",
       "adx": 17.8,
       "chop": 49.2,
@@ -189,7 +189,7 @@
     {
       "symbol": "DE30",
       "class": "Equity Index",
-      "price": 25703.6,
+      "price": 25707.6,
       "regime": "RANGING",
       "adx": 31.5,
       "chop": 52.0,
@@ -200,7 +200,7 @@
     {
       "symbol": "USOIL",
       "class": "Energy Commodity",
-      "price": 83.684,
+      "price": 83.657,
       "regime": "RANGING",
       "adx": 19.3,
       "chop": 57.5,
@@ -211,7 +211,7 @@
     {
       "symbol": "UKOIL",
       "class": "Energy Commodity",
-      "price": 91.134,
+      "price": 91.186,
       "regime": "NO_TREND",
       "adx": 15.1,
       "chop": 62.6,
@@ -222,7 +222,7 @@
     {
       "symbol": "BTCUSD",
       "class": "Cryptocurrency",
-      "price": 63924.32,
+      "price": 63903.33,
       "regime": "RANGING",
       "adx": 17.5,
       "chop": 50.5,
@@ -233,7 +233,7 @@
     {
       "symbol": "ETHUSD",
       "class": "Cryptocurrency",
-      "price": 1810.78,
+      "price": 1809.32,
       "regime": "RANGING",
       "adx": 17.8,
       "chop": 50.9,
