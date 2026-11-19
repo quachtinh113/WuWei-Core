@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-11-19 21:13:29",
+  "timestamp": "2026-11-19 21:19:00",
   "account": {
     "login": 272576224,
     "server": "Exness-MT5Trial14",
     "balance": 9197.42,
-    "equity": 9217.77,
-    "free_margin": 9202.03,
-    "daily_drawdown_pct": 0.013708699760001348,
+    "equity": 9214.85,
+    "free_margin": 9199.11,
+    "daily_drawdown_pct": 0.014021136563772853,
     "circuit_breaker_active": false
   },
   "assets": [
     {
       "symbol": "XAUUSD",
       "class": "Precious Metals",
-      "price": 3708.804,
+      "price": 3709.236,
       "regime": "RANGING",
       "adx": 31.1,
       "chop": 53.4,
@@ -24,7 +24,7 @@
     {
       "symbol": "XAGUSD",
       "class": "Precious Metals",
-      "price": 45.252,
+      "price": 45.237,
       "regime": "RANGING",
       "adx": 27.6,
       "chop": 55.1,
@@ -35,7 +35,7 @@
     {
       "symbol": "EURUSD",
       "class": "FX Major",
-      "price": 1.10027,
+      "price": 1.10039,
       "regime": "RANGING",
       "adx": 29.2,
       "chop": 39.8,
@@ -46,7 +46,7 @@
     {
       "symbol": "GBPUSD",
       "class": "FX Major",
-      "price": 1.31616,
+      "price": 1.31628,
       "regime": "RANGING",
       "adx": 35.4,
       "chop": 48.6,
@@ -57,7 +57,7 @@
     {
       "symbol": "USDJPY",
       "class": "FX Major",
-      "price": 159.914,
+      "price": 159.879,
       "regime": "RANGING",
       "adx": 20.4,
       "chop": 34.8,
@@ -68,7 +68,7 @@
     {
       "symbol": "AUDUSD",
       "class": "FX Major",
-      "price": 0.67148,
+      "price": 0.67147,
       "regime": "RANGING",
       "adx": 24.7,
       "chop": 44.0,
@@ -79,18 +79,18 @@
     {
       "symbol": "USDCAD",
       "class": "FX Major",
-      "price": 1.42911,
+      "price": 1.4292099999999999,
       "regime": "TRENDING_BEAR",
       "adx": 26.1,
       "chop": 27.8,
       "forecast": -11.3,
       "action": "NONE",
-      "status": "SHORT 0.15L ($+2.62)"
+      "status": "SHORT 0.15L ($+1.57)"
     },
     {
       "symbol": "USDCHF",
       "class": "FX Major",
-      "price": 0.84206,
+      "price": 0.84221,
       "regime": "RANGING",
       "adx": 18.1,
       "chop": 55.5,
@@ -101,7 +101,7 @@
     {
       "symbol": "NZDUSD",
       "class": "FX Major",
-      "price": 0.55256,
+      "price": 0.55258,
       "regime": "TRENDING_BULL",
       "adx": 26.2,
       "chop": 33.8,
@@ -112,18 +112,18 @@
     {
       "symbol": "EURJPY",
       "class": "FX Cross",
-      "price": 175.961,
+      "price": 175.94,
       "regime": "TRENDING_BULL",
       "adx": 32.5,
       "chop": 30.1,
       "forecast": 10.8,
       "action": "NONE",
-      "status": "LONG 0.15L ($+17.73)"
+      "status": "LONG 0.15L ($+15.86)"
     },
     {
       "symbol": "GBPJPY",
       "class": "FX Cross",
-      "price": 210.482,
+      "price": 210.448,
       "regime": "TRENDING_BULL",
       "adx": 30.4,
       "chop": 35.1,
@@ -134,7 +134,7 @@
     {
       "symbol": "EURGBP",
       "class": "FX Cross",
-      "price": 0.8359,
+      "price": 0.83594,
       "regime": "RANGING",
       "adx": 34.6,
       "chop": 41.7,
@@ -145,7 +145,7 @@
     {
       "symbol": "AUDJPY",
       "class": "FX Cross",
-      "price": 107.381,
+      "price": 107.357,
       "regime": "RANGING",
       "adx": 27.1,
       "chop": 39.5,
@@ -156,7 +156,7 @@
     {
       "symbol": "US30",
       "class": "Equity Index",
-      "price": 50460.4,
+      "price": 50476.3,
       "regime": "RANGING",
       "adx": 23.6,
       "chop": 59.8,
@@ -167,7 +167,7 @@
     {
       "symbol": "US500",
       "class": "Equity Index",
-      "price": 7405.0,
+      "price": 7408.0,
       "regime": "RANGING",
       "adx": 17.7,
       "chop": 48.7,
@@ -178,7 +178,7 @@
     {
       "symbol": "USTEC",
       "class": "Equity Index",
-      "price": 27659.64,
+      "price": 27675.64,
       "regime": "RANGING",
       "adx": 17.8,
       "chop": 49.2,
@@ -189,7 +189,7 @@
     {
       "symbol": "DE30",
       "class": "Equity Index",
-      "price": 25707.6,
+      "price": 25715.6,
       "regime": "RANGING",
       "adx": 31.5,
       "chop": 52.0,
@@ -200,7 +200,7 @@
     {
       "symbol": "USOIL",
       "class": "Energy Commodity",
-      "price": 83.657,
+      "price": 83.615,
       "regime": "RANGING",
       "adx": 19.3,
       "chop": 57.5,
@@ -211,7 +211,7 @@
     {
       "symbol": "UKOIL",
       "class": "Energy Commodity",
-      "price": 91.186,
+      "price": 91.096,
       "regime": "NO_TREND",
       "adx": 15.1,
       "chop": 62.6,
@@ -222,7 +222,7 @@
     {
       "symbol": "BTCUSD",
       "class": "Cryptocurrency",
-      "price": 63903.33,
+      "price": 63880.14,
       "regime": "RANGING",
       "adx": 17.5,
       "chop": 50.5,
@@ -233,7 +233,7 @@
     {
       "symbol": "ETHUSD",
       "class": "Cryptocurrency",
-      "price": 1809.32,
+      "price": 1807.8,
       "regime": "RANGING",
       "adx": 17.8,
       "chop": 50.9,
