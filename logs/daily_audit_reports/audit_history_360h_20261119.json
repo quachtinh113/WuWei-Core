@@ -1,0 +1,256 @@
+{
+  "skill": "universal-institutional-quant-auditor",
+  "timestamp_utc": "2026-11-19T14:21:34.870441+00:00",
+  "bot_profile": {
+    "bot_name": "Universal_MT5_Bot",
+    "bot_dir": "N/A",
+    "data_source": "LIVE_MT5_DEALS",
+    "alpha_indicators": [],
+    "has_ml_gatekeeper": false,
+    "ml_frameworks": [],
+    "strategy_files": [],
+    "ml_files": [],
+    "risk_files": []
+  },
+  "1_status_tiers": [
+    {
+      "component": "[Universal_MT5_Bot] Time Rule & Overnight/Weekend Gate (23:45 Cutoff)",
+      "status": "CRITICAL",
+      "detail": "Ngu\u1ed3n d\u1eef li\u1ec7u: LIVE_MT5_DEALS (58 l\u1ec7nh). Ph\u00e1t hi\u1ec7n 24 l\u1ec7nh gi\u1eef qua \u0111\u00eam (>23:45 / >12h) v\u00e0 3 l\u1ec7nh gi\u1eef qua cu\u1ed1i tu\u1ea7n. Code c\u00f3 EOD 23:45 Cutoff: False. MT5 Live hi\u1ec7n c\u00f3 2 l\u1ec7nh \u0111ang m\u1edf."
+    },
+    {
+      "component": "[Universal_MT5_Bot] Kh\u1ed1i Alpha Engine (Custom Signal)",
+      "status": "WARNING",
+      "detail": "T\u1ea1o ra 10 Good Wins (+$164.53). L\u1ec7nh thua do nhi\u1ec5u t\u00edn hi\u1ec7u Alpha: 6 l\u1ec7nh; thua do mua \u0111u\u1ed5i ADX > 35: 0 l\u1ec7nh."
+    },
+    {
+      "component": "[Universal_MT5_Bot] Kh\u1ed1i ML / Filter Gatekeeper (Pure Rule-Based Quant \u2014 No ML)",
+      "status": "HEALTHY",
+      "detail": "Bot v\u1eadn h\u00e0nh theo m\u00f4 h\u00ecnh \u0110\u1ecbnh l\u01b0\u1ee3ng Thu\u1ea7n Quy T\u1eafc (Rule-Based CTA / Stat-Arb), kh\u00f4ng d\u00f9ng ML Gatekeeper (Zero ML Latency)."
+    },
+    {
+      "component": "[Universal_MT5_Bot] Kh\u1ed1i Emergency (OnTimer, Hard SL & 5 \u0110i\u1ec1u R\u0103n)",
+      "status": "HEALTHY",
+      "detail": "Double-Fill trong log: 0 | S\u1ef1 ki\u1ec7n ng\u1eaft m\u1ea1ch DD: 0 | L\u1ec7nh Live thi\u1ebfu Hard SL: 0 | C\u1ea3nh b\u00e1o ki\u1ebfn tr\u00fac: Chu\u1ea9n th\u1ec3 ch\u1ebf."
+    }
+  ],
+  "2_trade_attribution_matrix": {
+    "summary_counts": {
+      "total_trades": 58,
+      "good_wins": 10,
+      "bad_wins": 23,
+      "good_losses": 6,
+      "bad_losses": 19,
+      "overnight_violations": 24,
+      "weekend_violations": 3,
+      "live_mt5_open_positions": 2
+    },
+    "sample_rows": [
+      {
+        "ticket": 3707114356,
+        "symbol": "EURJPYm",
+        "side": "SELL",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-05 23:04 -> 11-06 01:35",
+        "holding_time": "2.5h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": -54.07,
+        "classification": "Bad Loss (Vi ph\u1ea1m Time Rule / V\u00e0o v\u00f9ng nhi\u1ec5u / G\u1ed3ng l\u1ed7)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      },
+      {
+        "ticket": 3785210559,
+        "symbol": "EURGBPm",
+        "side": "BUY",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-19 10:00 -> 11-19 12:16",
+        "holding_time": "2.3h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": -50.19,
+        "classification": "Bad Loss (Vi ph\u1ea1m Time Rule / V\u00e0o v\u00f9ng nhi\u1ec5u / G\u1ed3ng l\u1ed7)",
+        "time_rule_status": "TU\u00c2N TH\u1ee6 (\u0110\u00f3ng s\u1ea1ch trong ng\u00e0y <23:45)"
+      },
+      {
+        "ticket": 3726397158,
+        "symbol": "EURJPYm",
+        "side": "BUY",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-10 09:01 -> 11-10 13:30",
+        "holding_time": "4.5h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": -39.39,
+        "classification": "Bad Loss (Vi ph\u1ea1m Time Rule / V\u00e0o v\u00f9ng nhi\u1ec5u / G\u1ed3ng l\u1ed7)",
+        "time_rule_status": "TU\u00c2N TH\u1ee6 (\u0110\u00f3ng s\u1ea1ch trong ng\u00e0y <23:45)"
+      },
+      {
+        "ticket": 3783041354,
+        "symbol": "USDCADm",
+        "side": "BUY",
+        "trigger": "Alpha(Drift) [Rule-Only]",
+        "open_close_time": "11-19 03:00 -> 11-19 05:43",
+        "holding_time": "2.7h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": -36.21,
+        "classification": "Bad Loss (Vi ph\u1ea1m Time Rule / V\u00e0o v\u00f9ng nhi\u1ec5u / G\u1ed3ng l\u1ed7)",
+        "time_rule_status": "TU\u00c2N TH\u1ee6 (\u0110\u00f3ng s\u1ea1ch trong ng\u00e0y <23:45)"
+      },
+      {
+        "ticket": 3776525585,
+        "symbol": "USOILm",
+        "side": "SELL",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-18 07:00 -> 11-18 11:55",
+        "holding_time": "4.9h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": -31.32,
+        "classification": "Bad Loss (Vi ph\u1ea1m Time Rule / V\u00e0o v\u00f9ng nhi\u1ec5u / G\u1ed3ng l\u1ed7)",
+        "time_rule_status": "TU\u00c2N TH\u1ee6 (\u0110\u00f3ng s\u1ea1ch trong ng\u00e0y <23:45)"
+      },
+      {
+        "ticket": 3736144435,
+        "symbol": "USDJPYm",
+        "side": "BUY",
+        "trigger": "Alpha(Drift) [Rule-Only]",
+        "open_close_time": "11-11 01:03 -> 11-11 22:06",
+        "holding_time": "21.1h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": 49.32,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      },
+      {
+        "ticket": 3736205815,
+        "symbol": "USDCHFm",
+        "side": "BUY",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-11 09:00 -> 11-11 23:11",
+        "holding_time": "14.2h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": 50.49,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      },
+      {
+        "ticket": 3769778796,
+        "symbol": "US30m",
+        "side": "SELL",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-16 19:00 -> 11-17 15:36",
+        "holding_time": "20.6h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": 62.28,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      },
+      {
+        "ticket": 3711476140,
+        "symbol": "NZDUSDm",
+        "side": "SELL",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-05 21:20 -> 11-06 14:46",
+        "holding_time": "17.4h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": 66.92,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      },
+      {
+        "ticket": 3711407891,
+        "symbol": "AUDUSDm",
+        "side": "SELL",
+        "trigger": "Alpha(Strict) [Rule-Only]",
+        "open_close_time": "11-05 16:00 -> 11-06 14:40",
+        "holding_time": "22.7h",
+        "slippage_usd": "-$0.25",
+        "pnl_usd": 87.12,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      }
+    ]
+  },
+  "3_daily_100usd_reconciliation": {
+    "target_daily_usd": 100.0,
+    "active_trading_days": 13,
+    "actual_total_pnl_usd": 318.39,
+    "actual_avg_daily_pnl_usd": 24.49,
+    "clean_no_bad_loss_total_pnl_usd": 739.43,
+    "clean_no_bad_loss_avg_daily_pnl_usd": 56.88,
+    "estimated_slippage_and_fee_bleed_usd": -14.5,
+    "ml_overconfident_loss_count": 0,
+    "double_fill_desync_count": 0,
+    "drawdown_halt_events": 0,
+    "payoff_ratio": 1.26,
+    "actual_win_rate_pct": 56.9,
+    "breakeven_win_rate_pct": 44.2
+  },
+  "3a_tri_block_deep_forensics": {
+    "alpha_block": {
+      "left_tail_top5_concentration_pct": 44.2,
+      "top5_worst_losses_usd": -211.18,
+      "gold_standard_alpha_count": 44,
+      "gold_standard_alpha_pnl_usd": 257.28,
+      "relaxed_drift_count": 14,
+      "relaxed_drift_pnl_usd": 61.11,
+      "late_trend_adx_gt_35_count": 0,
+      "late_trend_adx_gt_35_pnl_usd": 0,
+      "asia_session_count": 14,
+      "asia_session_pnl_usd": 61.11,
+      "eu_us_active_count": 44,
+      "eu_us_active_pnl_usd": 257.28
+    },
+    "ml_block_confusion_matrix": {
+      "tp_veto_blocked_losers_count": 0,
+      "saved_loss_usd": 0,
+      "fp_veto_blocked_winners_count": 0,
+      "missed_alpha_opportunity_cost_usd": 0,
+      "fn_leaked_losers_count": 25,
+      "leaked_loss_usd": 477.83,
+      "tn_captured_winners_count": 33,
+      "captured_alpha_usd": 796.22,
+      "net_ml_value_add_usd": 0
+    },
+    "emergency_block": {
+      "alpha_tp_exits": 33,
+      "controlled_intraday_sl_exits": 16,
+      "emergency_time_or_tail_cut_exits": 9,
+      "emergency_overload_ratio_pct": 36.0
+    }
+  },
+  "3b_keep_vs_fix_matrix": {
+    "keep_and_amplify_strengths": [
+      "[T\u00c0I S\u1ea2N SINH ALPHA B\u1ec0N V\u1eeeNG \u2014 GI\u1eee NGUY\u00caN & T\u0102NG VOL-TARGETING] DE30m (+$12.79, PF=1.26, 6 l\u1ec7nh), AUDUSDm (+$49.23, PF=2.08, 4 l\u1ec7nh), ETHUSDm (+$63.41, PF=6.37, 5 l\u1ec7nh), BTCUSDm (+$100.49, PF=240.26, 5 l\u1ec7nh).",
+      "[PHI\u00caN GIAO D\u1ecaCH HI\u1ec6U QU\u1ea2 CAO \u2014 B\u1ea2O TO\u00c0N 100% T\u00cdN HI\u1ec6U] OVERLAP_EU_US (+$233.23, 12 l\u1ec7nh), US (+$149.91, 21 l\u1ec7nh), ASIA (+$61.11, 14 l\u1ec7nh).",
+      "[KHUNG GI\u1edc V\u00c0NG (GOLDEN HOURS) \u2014 PH\u00c1T HUY T\u1ed0I \u0110A] 14:00 UTC (+$119.64), 16:00 UTC (+$93.07), 19:00 UTC (+$68.91).",
+      "[H\u1ea0 T\u1ea6NG TH\u1ef0C THI SI\u00caU T\u1ed0C \u2014 GI\u1eee NGUY\u00caN] \u0110\u1ed9 tr\u1ec5 x\u1eed l\u00fd \u0111\u1eb7c tr\u01b0ng/ML \u0111\u1ea1t 0.03ms (nhanh g\u1ea5p 600 l\u1ea7n ng\u01b0\u1ee1ng c\u1ea3nh b\u00e1o 30ms)."
+    ],
+    "fix_immediately_weaknesses": [
+      "[T\u00c0I S\u1ea2N CH\u1ea2Y M\u00c1U / L\u1ec6CH \u0110U\u00d4I TR\u00c1I \u2014 C\u1ea6N \u00c1P HARD SL & TIME-STOP NGAY] USOILm ($-43.00, PF=0.00, L\u1ed7 \u0111u\u00f4i tr\u00e1i n\u1eb7ng nh\u1ea5t: $-31.32), EURJPYm ($-90.37, PF=0.03, L\u1ed7 \u0111u\u00f4i tr\u00e1i n\u1eb7ng nh\u1ea5t: $-54.07), USTECm ($-26.14, PF=0.00, L\u1ed7 \u0111u\u00f4i tr\u00e1i n\u1eb7ng nh\u1ea5t: $-26.14), USDCADm ($-36.89, PF=0.20, L\u1ed7 \u0111u\u00f4i tr\u00e1i n\u1eb7ng nh\u1ea5t: $-36.21).",
+      "[PHI\u00caN NHI\u1ec4U THANH KHO\u1ea2N \u2014 CH\u1eb6N M\u1ede L\u1ec6NH M\u1edaI] EUROPE ($-125.86, 11 l\u1ec7nh).",
+      "[KHUNG GI\u1edc T\u1eec TH\u1ea6N (TOXIC HOURS) \u2014 C\u1ea6N KH\u00d3A GIAO D\u1ecaCH] 00:00 UTC ($-50.99), 23:00 UTC ($-54.07), 10:00 UTC ($-66.43)."
+    ]
+  },
+  "counterfactual_no_regression_gate": {
+    "good_win_retention_pct": 100.0,
+    "pf_before": 1.67,
+    "pf_after": 14.02,
+    "win_rate_before_pct": 56.9,
+    "win_rate_after_pct": 84.62,
+    "max_dd_before_usd": 231.46,
+    "max_dd_after_usd": 46.85,
+    "expectancy_before_usd": 5.49,
+    "expectancy_after_usd": 18.96,
+    "verdict": "PASS_ZERO_REGRESSION (C\u1ea3i ti\u1ebfn d\u01b0\u01a1ng tuy\u1ec7t \u0111\u1ed1i \u2014 B\u1ea3o to\u00e0n 100% Good Win)"
+  },
+  "4_no_regression_action_checklist": [
+    {
+      "target": "1. [Universal_MT5_Bot] Kh\u00f3a C\u1ee9ng Quy T\u1eafc \u0110\u00f3ng Phi\u00ean 23:45 Server Time (main_runner.py)",
+      "action": "Trong `main_runner.py`: t\u00edch h\u1ee3p h\u00e0m `enforce_eod_flat(server_cutoff='23:45', friday_cutoff='21:00')` v\u00e0o lu\u1ed3ng OnTimer \u0111\u1ec3 t\u1ef1 \u0111\u1ed9ng \u0111\u00f3ng s\u1ea1ch l\u1ec7nh intraday tr\u01b0\u1edbc gi\u1edd gi\u00e3n spread Rollover.",
+      "no_regression_proof": "B\u1ea3o to\u00e0n 100% (10/10) l\u1ec7nh Good Win (+$164.53), lo\u1ea1i b\u1ecf 24 l\u1ec7nh qua \u0111\u00eam v\u00e0 3 l\u1ec7nh qua cu\u1ed1i tu\u1ea7n."
+    },
+    {
+      "target": "2. [Universal_MT5_Bot] Ph\u1eabu Thu\u1eadt L\u1ecdc B\u1ecf Bad Loss T\u1ea1i Kh\u1ed1i Alpha (strategy_engine.py)",
+      "action": "Trong `strategy_engine.py`: ch\u1eb7n m\u1edf l\u1ec7nh m\u1edbi khi th\u1ecb tr\u01b0\u1eddng \u1edf v\u00f9ng nhi\u1ec5u/cu\u1ed1i s\u00f3ng (ADX > 35 ho\u1eb7c phi\u00ean thanh kho\u1ea3n m\u1ecfng ASIA) v\u00e0 \u00e1p d\u1ee5ng Time-Stop c\u1eaft s\u1edbm c\u00e1c l\u1ec7nh \u00e2m k\u00e9o d\u00e0i qu\u00e1 4h.",
+      "no_regression_proof": "X\u00f3a b\u1ecf 19 l\u1ec7nh Bad Loss ($-421.04) m\u00e0 kh\u00f4ng ch\u1ea1m v\u00e0o c\u00f4ng th\u1ee9c sinh ra 10 l\u1ec7nh Good Win, n\u00e2ng PnL trung b\u00ecnh t\u1eeb $+24.49/ng\u00e0y l\u00ean +$56.88/ng\u00e0y."
+    }
+  ]
+}

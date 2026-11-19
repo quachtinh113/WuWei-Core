@@ -225,19 +225,35 @@ class RiskEngine:
             else:
                 forecast_val = 10.0 if signal.action == SignalAction.BUY else -10.0
 
-            # Quy đổi tỷ giá đồng yết giá (Quote Currency) sang USD
+            # Quy đổi tỷ giá đồng yết giá (Quote Currency) sang USD theo tick_value động của broker
             quote_fx = 1.0
-            clean_s = symbol.upper()
-            if clean_s.endswith("JPY"):
-                quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 150.0
-            elif clean_s.endswith("CAD"):
-                quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 1.35
-            elif clean_s.endswith("CHF"):
-                quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 0.85
-            elif clean_s.endswith("GBP"):
-                quote_fx = 1.30
+            s_info = None
+            try:
+                import MetaTrader5 as mt5
+                # Thử lấy thông tin trực tiếp từ broker Exness
+                for sym_candidate in (symbol, symbol + "m", symbol.replace("m", "")):
+                    s_info = mt5.symbol_info(sym_candidate)
+                    if s_info is not None:
+                        break
+            except Exception:
+                s_info = None
+
+            if s_info and s_info.trade_tick_size > 0 and s_info.trade_contract_size > 0 and s_info.trade_tick_value > 0:
+                quote_fx = (s_info.trade_tick_value / s_info.trade_tick_size) / s_info.trade_contract_size
             elif spec.tick_size > 0 and spec.tick_value > 0 and spec.contract_size > 0:
+                # Fallback 1: Sử dụng cấu hình spec đã đồng bộ
                 quote_fx = (spec.tick_value / spec.tick_size) / spec.contract_size
+            else:
+                # Fallback 2: Tính toán dự phòng theo thị giá hiện tại
+                clean_s = symbol.upper()
+                if clean_s.endswith("JPY"):
+                    quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 155.0
+                elif clean_s.endswith("CAD"):
+                    quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 1.40
+                elif clean_s.endswith("CHF"):
+                    quote_fx = 1.0 / current_price if current_price > 0 else 1.0 / 0.85
+                elif clean_s.endswith("GBP"):
+                    quote_fx = 1.315
 
             target_lots, low_buf, high_buf, vol_scalar = sizer.compute_target_and_buffers(
                 equity=account.equity,
@@ -394,4 +410,66 @@ class RiskEngine:
                 return True, ExitReason.TIME_STOP.value
 
         return False, None
+
+    def evaluate_trailing_stop(
+        self,
+        position: Any,
+        current_price: float,
+        atr: float,
+        pip_size: float = 0.0001,
+        activation_atr_mult: float = 1.5,
+        trailing_dist_atr_mult: float = 1.5,
+    ) -> Optional[float]:
+        """
+        Cơ chế Trailing Stop Động Chống Ăn Non (Chandelier ATR Trailing Stop):
+        1. Ngưỡng kích hoạt (Activation Threshold): Lợi nhuận vị thế phải đạt >= activation_atr_mult * ATR (mặc định 1.5 * ATR).
+        2. Khoảng đệm bám đuổi (Trailing Distance): Khi đã kích hoạt, giữ SL cách giá hiện tại đúng trailing_dist_atr_mult * ATR (mặc định 1.5 * ATR).
+        3. Bảo toàn hướng có lợi: Chỉ dời SL khi new_sl cải thiện SL hiện tại tối thiểu 1 pip (không bao giờ nới lỏng SL làm tăng rủi ro).
+        
+        Trả về new_sl (float) nếu cần cập nhật SL, hoặc None nếu chưa đủ điều kiện.
+        """
+        if atr <= 0:
+            return None
+
+        open_price = getattr(position, "open_price", getattr(position, "entry_price", getattr(position, "price_open", 0.0)))
+        current_sl = getattr(position, "stop_loss", getattr(position, "sl", 0.0))
+        pos_side = getattr(position, "side", getattr(position, "type", PositionSide.LONG))
+
+        if open_price <= 0:
+            return None
+
+        is_long = (
+            pos_side in (PositionSide.LONG, "BUY", "LONG", 0)
+            or str(pos_side).upper() in ("POSITIONSIDE.LONG", "BUY", "LONG", "0")
+        )
+
+        activation_dist = activation_atr_mult * atr
+        trailing_dist = trailing_dist_atr_mult * atr
+
+        # Kiểm tra bước giá tối thiểu và stops_level chống spam modify_stop_loss & TRADE_RETCODE_NO_CHANGES
+        min_step = 1.0 * pip_size
+        try:
+            import MetaTrader5 as mt5
+            s_cand = getattr(position, "symbol", "")
+            s_info = mt5.symbol_info(s_cand) or mt5.symbol_info(s_cand + "m")
+            if s_info:
+                stops_level_pts = getattr(s_info, "trade_stops_level", 0) * s_info.point
+                min_step = max(min_step, stops_level_pts)
+        except Exception:
+            pass
+
+        if is_long:
+            unrealized_dist = current_price - open_price
+            if unrealized_dist >= activation_dist:
+                new_sl = current_price - trailing_dist
+                if new_sl > current_sl + min_step:
+                    return round(new_sl, 5)
+        else:
+            unrealized_dist = open_price - current_price
+            if unrealized_dist >= activation_dist:
+                new_sl = current_price + trailing_dist
+                if current_sl <= 0 or new_sl < current_sl - min_step:
+                    return round(new_sl, 5)
+
+        return None
 

@@ -1,0 +1,185 @@
+{
+  "skill": "universal-institutional-quant-auditor",
+  "timestamp_utc": "2026-11-19T14:21:25.670005+00:00",
+  "bot_profile": {
+    "bot_name": "",
+    "bot_dir": ".",
+    "data_source": "TELEMETRY_STATE_JSON",
+    "alpha_indicators": [
+      "ADX",
+      "ATR",
+      "Bollinger",
+      "CHOP",
+      "Carver Forecast",
+      "Donchian",
+      "EMA/SMA",
+      "Hurst/ER",
+      "MACD",
+      "RSI",
+      "VWAP",
+      "Z-Score"
+    ],
+    "has_ml_gatekeeper": true,
+    "ml_frameworks": [
+      "LightGBM",
+      "XGBoost"
+    ],
+    "strategy_files": [
+      "bot_status.py",
+      "live_trade.py",
+      "07_Skill/.agents/skills/alpha-factor-lab/scripts/denoising.py",
+      "07_Skill/.agents/skills/institutional-quant-audit/scripts/audit_any_bot.py",
+      "07_Skill/.agents/skills/institutional-quant-audit/scripts/audit_weekly_alpha.py",
+      "07_Skill/.agents/skills/institutional-quant-audit/scripts/audit_work_quant_bot.py"
+    ],
+    "ml_files": [
+      "07_Skill/.agents/skills/financial-ml-labeling/scripts/cusum_filter.py",
+      "07_Skill/.agents/skills/financial-ml-labeling/scripts/purged_cv.py",
+      "07_Skill/.agents/skills/financial-ml-labeling/scripts/triple_barrier.py",
+      "07_Skill/.agents/skills/quant-alpha-executor/scripts/audit_alpha_model.py"
+    ],
+    "risk_files": [
+      "07_Skill/.agents/skills/hedge-fund-cro/scripts/audit_risk_limits.py",
+      "07_Skill/.agents/skills/quant-alpha-executor/scripts/audit_alpha_model.py",
+      "engines/execution_engine.py",
+      "engines/risk_engine.py"
+    ]
+  },
+  "1_status_tiers": [
+    {
+      "component": "[] Time Rule & Overnight/Weekend Gate (23:45 Cutoff)",
+      "status": "CRITICAL",
+      "detail": "Ngu\u1ed3n d\u1eef li\u1ec7u: TELEMETRY_STATE_JSON (2 l\u1ec7nh). Ph\u00e1t hi\u1ec7n 2 l\u1ec7nh gi\u1eef qua \u0111\u00eam (>23:45 / >12h) v\u00e0 0 l\u1ec7nh gi\u1eef qua cu\u1ed1i tu\u1ea7n. Code c\u00f3 EOD 23:45 Cutoff: True. MT5 Live hi\u1ec7n c\u00f3 2 l\u1ec7nh \u0111ang m\u1edf."
+    },
+    {
+      "component": "[] Kh\u1ed1i Alpha Engine (ADX, ATR, Bollinger, CHOP, Carver Forecast)",
+      "status": "HEALTHY",
+      "detail": "T\u1ea1o ra 0 Good Wins (+$0.00). L\u1ec7nh thua do nhi\u1ec5u t\u00edn hi\u1ec7u Alpha: 0 l\u1ec7nh; thua do mua \u0111u\u1ed5i ADX > 35: 0 l\u1ec7nh."
+    },
+    {
+      "component": "[] Kh\u1ed1i ML Engine (LightGBM, XGBoost)",
+      "status": "HEALTHY",
+      "detail": "Latency = 0.1ms (<30ms). T\u1ef1 tin \u1ea3o (Conf >= 0.80 nh\u01b0ng thua): 0 l\u1ec7nh. L\u1ed7i code ML ph\u00e1t hi\u1ec7n: Kh\u00f4ng ph\u00e1t hi\u1ec7n l\u1ed7i r\u00f2 r\u1ec9 d\u1eef li\u1ec7u."
+    },
+    {
+      "component": "[] Kh\u1ed1i Emergency (OnTimer, Hard SL & 5 \u0110i\u1ec1u R\u0103n)",
+      "status": "HEALTHY",
+      "detail": "Double-Fill trong log: 0 | S\u1ef1 ki\u1ec7n ng\u1eaft m\u1ea1ch DD: 0 | L\u1ec7nh Live thi\u1ebfu Hard SL: 0 | C\u1ea3nh b\u00e1o ki\u1ebfn tr\u00fac: Chu\u1ea9n th\u1ec3 ch\u1ebf."
+    }
+  ],
+  "2_trade_attribution_matrix": {
+    "summary_counts": {
+      "total_trades": 2,
+      "good_wins": 0,
+      "bad_wins": 2,
+      "good_losses": 0,
+      "bad_losses": 0,
+      "overnight_violations": 2,
+      "weekend_violations": 0,
+      "live_mt5_open_positions": 2
+    },
+    "sample_rows": [
+      {
+        "ticket": 880007,
+        "symbol": "USDCAD",
+        "side": "SELL",
+        "trigger": "Alpha(Strict) + ML(0.50)",
+        "open_close_time": "11-19 07:21 -> 11-19 21:21",
+        "holding_time": "14.0h",
+        "slippage_usd": "-$0.85",
+        "pnl_usd": 0.94,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      },
+      {
+        "ticket": 880010,
+        "symbol": "EURJPY",
+        "side": "BUY",
+        "trigger": "Alpha(Strict) + ML(0.50)",
+        "open_close_time": "11-19 07:21 -> 11-19 21:21",
+        "holding_time": "14.0h",
+        "slippage_usd": "-$0.85",
+        "pnl_usd": 11.07,
+        "classification": "Bad Win (Th\u1eafng may m\u1eafn ng\u01b0\u1ee3c Regime / Vi ph\u1ea1m Time Rule)",
+        "time_rule_status": "VI PH\u1ea0M CRITICAL: Gi\u1eef l\u1ec7nh qua \u0111\u00eam (>23:45 Server Time / Rollover)"
+      }
+    ]
+  },
+  "3_daily_100usd_reconciliation": {
+    "target_daily_usd": 100.0,
+    "active_trading_days": 1,
+    "actual_total_pnl_usd": 12.01,
+    "actual_avg_daily_pnl_usd": 12.01,
+    "clean_no_bad_loss_total_pnl_usd": 12.01,
+    "clean_no_bad_loss_avg_daily_pnl_usd": 12.01,
+    "estimated_slippage_and_fee_bleed_usd": -1.7,
+    "ml_overconfident_loss_count": 0,
+    "double_fill_desync_count": 0,
+    "drawdown_halt_events": 0,
+    "payoff_ratio": 0.0,
+    "actual_win_rate_pct": 100.0,
+    "breakeven_win_rate_pct": 0.0
+  },
+  "3a_tri_block_deep_forensics": {
+    "alpha_block": {
+      "left_tail_top5_concentration_pct": 0.0,
+      "top5_worst_losses_usd": 0,
+      "gold_standard_alpha_count": 2,
+      "gold_standard_alpha_pnl_usd": 12.01,
+      "relaxed_drift_count": 0,
+      "relaxed_drift_pnl_usd": 0,
+      "late_trend_adx_gt_35_count": 0,
+      "late_trend_adx_gt_35_pnl_usd": 0,
+      "asia_session_count": 0,
+      "asia_session_pnl_usd": 0,
+      "eu_us_active_count": 2,
+      "eu_us_active_pnl_usd": 12.01
+    },
+    "ml_block_confusion_matrix": {
+      "tp_veto_blocked_losers_count": 0,
+      "saved_loss_usd": 0,
+      "fp_veto_blocked_winners_count": 2,
+      "missed_alpha_opportunity_cost_usd": 12.01,
+      "fn_leaked_losers_count": 0,
+      "leaked_loss_usd": 0,
+      "tn_captured_winners_count": 0,
+      "captured_alpha_usd": 0,
+      "net_ml_value_add_usd": -12.01
+    },
+    "emergency_block": {
+      "alpha_tp_exits": 2,
+      "controlled_intraday_sl_exits": 0,
+      "emergency_time_or_tail_cut_exits": 0,
+      "emergency_overload_ratio_pct": 0.0
+    }
+  },
+  "3b_keep_vs_fix_matrix": {
+    "keep_and_amplify_strengths": [
+      "[T\u00c0I S\u1ea2N SINH ALPHA B\u1ec0N V\u1eeeNG \u2014 GI\u1eee NGUY\u00caN & T\u0102NG VOL-TARGETING] USDCAD (+$0.94, PF=9.99, 1 l\u1ec7nh), EURJPY (+$11.07, PF=9.99, 1 l\u1ec7nh).",
+      "[PHI\u00caN GIAO D\u1ecaCH HI\u1ec6U QU\u1ea2 CAO \u2014 B\u1ea2O TO\u00c0N 100% T\u00cdN HI\u1ec6U] EUROPE (+$12.01, 2 l\u1ec7nh).",
+      "[KHUNG GI\u1edc V\u00c0NG (GOLDEN HOURS) \u2014 PH\u00c1T HUY T\u1ed0I \u0110A] 07:00 UTC (+$12.01).",
+      "[H\u1ea0 T\u1ea6NG TH\u1ef0C THI SI\u00caU T\u1ed0C \u2014 GI\u1eee NGUY\u00caN] \u0110\u1ed9 tr\u1ec5 x\u1eed l\u00fd \u0111\u1eb7c tr\u01b0ng/ML \u0111\u1ea1t 0.1ms (nhanh g\u1ea5p 600 l\u1ea7n ng\u01b0\u1ee1ng c\u1ea3nh b\u00e1o 30ms).",
+      "[QU\u1ea2N TR\u1eca R\u1ee6I RO TH\u1ec2 CH\u1ebe \u2014 GI\u1eee NGUY\u00caN] Code \u0111\u00e3 t\u00edch h\u1ee3p Thang b\u1eadc Gi\u1ea3m v\u1ed1n (Drawdown Ladder -3%/-5%/-7.5%)."
+    ],
+    "fix_immediately_weaknesses": []
+  },
+  "counterfactual_no_regression_gate": {
+    "good_win_retention_pct": 100.0,
+    "pf_before": 99.9,
+    "pf_after": 99.9,
+    "win_rate_before_pct": 100.0,
+    "win_rate_after_pct": 100.0,
+    "max_dd_before_usd": 0.0,
+    "max_dd_after_usd": 0.0,
+    "expectancy_before_usd": 6.0,
+    "expectancy_after_usd": 6.0,
+    "verdict": "PASS_ZERO_REGRESSION (C\u1ea3i ti\u1ebfn d\u01b0\u01a1ng tuy\u1ec7t \u0111\u1ed1i \u2014 B\u1ea3o to\u00e0n 100% Good Win)"
+  },
+  "4_no_regression_action_checklist": [
+    {
+      "target": "1. [] Kh\u00f3a C\u1ee9ng Quy T\u1eafc \u0110\u00f3ng Phi\u00ean 23:45 Server Time (07_Skill/.agents/skills/hedge-fund-cro/scripts/audit_risk_limits.py)",
+      "action": "Trong `07_Skill/.agents/skills/hedge-fund-cro/scripts/audit_risk_limits.py`: t\u00edch h\u1ee3p h\u00e0m `enforce_eod_flat(server_cutoff='23:45', friday_cutoff='21:00')` v\u00e0o lu\u1ed3ng OnTimer \u0111\u1ec3 t\u1ef1 \u0111\u1ed9ng \u0111\u00f3ng s\u1ea1ch l\u1ec7nh intraday tr\u01b0\u1edbc gi\u1edd gi\u00e3n spread Rollover.",
+      "no_regression_proof": "B\u1ea3o to\u00e0n 100% (0/0) l\u1ec7nh Good Win (+$0.00), lo\u1ea1i b\u1ecf 2 l\u1ec7nh qua \u0111\u00eam v\u00e0 0 l\u1ec7nh qua cu\u1ed1i tu\u1ea7n."
+    }
+  ]
+}
