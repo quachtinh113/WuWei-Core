@@ -674,5 +674,57 @@ class TestInstitutionalRefinements:
         order_golden, _ = risk_engine.evaluate_order(sig_golden, current_price=1.1205, account=account, open_positions={})
         assert order_golden is not None
 
+    def test_trailing_stop_activation_and_distance(self, default_settings):
+        """
+        Kiểm tra cơ chế Trailing Stop chống ăn non:
+        1. Lệnh đang lãi 1.0 ATR (< 1.5 ATR) -> Trailing Stop KHÔNG kích hoạt (returns None).
+        2. Lệnh đang lãi 1.8 ATR (>= 1.5 ATR) -> Trailing Stop kích hoạt và đặt SL cách giá hiện tại đúng 1.5 ATR.
+        """
+        risk_engine = RiskEngine(default_settings.risk, default_settings.symbols)
+        atr_val = 0.0010  # 10 pips
+        entry_price = 1.1000
+        initial_sl = entry_price - 2.0 * atr_val  # 1.0980
+
+        pos_long = Position(
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            volume=0.10,
+            entry_price=entry_price,
+            entry_time=datetime.now(),
+            current_price=entry_price,
+            stop_loss=initial_sl,
+            take_profit=None,
+            ticket=123456,
+            unrealized_pnl=0.0
+        )
+
+        # Trường hợp 1: Giá đang lãi 1.0 ATR (1.1010) -> KHÔNG kích hoạt Trailing Stop (new_sl is None)
+        curr_price_1 = entry_price + 1.0 * atr_val  # 1.1010
+        new_sl_1 = risk_engine.evaluate_trailing_stop(
+            position=pos_long,
+            current_price=curr_price_1,
+            atr=atr_val,
+            pip_size=0.0001,
+            activation_atr_mult=1.5,
+            trailing_dist_atr_mult=1.5
+        )
+        assert new_sl_1 is None
+
+        # Trường hợp 2: Giá đang lãi 1.8 ATR (1.1018) -> Kích hoạt Trailing Stop, đặt SL cách giá đúng 1.5 ATR
+        curr_price_2 = entry_price + 1.8 * atr_val  # 1.1018
+        new_sl_2 = risk_engine.evaluate_trailing_stop(
+            position=pos_long,
+            current_price=curr_price_2,
+            atr=atr_val,
+            pip_size=0.0001,
+            activation_atr_mult=1.5,
+            trailing_dist_atr_mult=1.5
+        )
+        expected_sl_2 = round(curr_price_2 - 1.5 * atr_val, 5)  # 1.1018 - 0.0015 = 1.1003
+        assert new_sl_2 is not None
+        assert abs(new_sl_2 - expected_sl_2) < 1e-5
+        # Đảm bảo SL mới cao hơn SL ban đầu (chỉ dời theo chiều có lợi)
+        assert new_sl_2 > initial_sl
+
 
 

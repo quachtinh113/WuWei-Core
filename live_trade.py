@@ -401,44 +401,21 @@ def main():
                                 notifier.send_position_closed(sym, current_pos.side.value, curr_bar.close, current_pos.unrealized_pnl, exit_reason, current_pos.ticket)
                         order_status_str = f"[bold yellow]CLOSED ({exit_reason})[/]"
 
-                    # 2. Cơ chế Khóa Hòa Vốn Tự Động (Break-Even Lock tại >= 1.5 * ATR)
-                    elif sym not in be_locked_symbols:
-                        be_trigger = 1.5 * atr_val
-                        be_buffer = 2.0 * pip_size
-                        if current_pos.side == PositionSide.LONG and (peak_profit_prices[sym] >= current_pos.entry_price + be_trigger):
-                            new_sl = current_pos.entry_price + be_buffer
-                            if new_sl > current_pos.stop_loss:
-                                console.print(f"[bold cyan]🛡️ BREAK-EVEN TRIGGERED ON {sym}:[/] Moving SL from {current_pos.stop_loss:.4f} -> {new_sl:.4f}")
-                                if is_live_mode and current_pos.ticket:
-                                    if connector.modify_stop_loss(current_pos.ticket, new_sl, symbol=sym):
-                                        notifier.send_trailing_stop_updated(sym, current_pos.stop_loss, new_sl, "Break-even", current_pos.ticket)
-                                        be_locked_symbols.add(sym)
-                        elif current_pos.side == PositionSide.SHORT and (peak_profit_prices[sym] <= current_pos.entry_price - be_trigger):
-                            new_sl = current_pos.entry_price - be_buffer
-                            if new_sl < current_pos.stop_loss:
-                                console.print(f"[bold cyan]🛡️ BREAK-EVEN TRIGGERED ON {sym}:[/] Moving SL from {current_pos.stop_loss:.4f} -> {new_sl:.4f}")
-                                if is_live_mode and current_pos.ticket:
-                                    if connector.modify_stop_loss(current_pos.ticket, new_sl, symbol=sym):
-                                        notifier.send_trailing_stop_updated(sym, current_pos.stop_loss, new_sl, "Break-even", current_pos.ticket)
-                                        be_locked_symbols.add(sym)
-
-                    # 3. Cơ chế Trailing Stop Động (Chandelier / ATR Trailing)
-                    else:
-                        trailing_dist = 2.0 * atr_val
-                        if current_pos.side == PositionSide.LONG:
-                            trail_sl = peak_profit_prices[sym] - trailing_dist
-                            if trail_sl > current_pos.stop_loss + (1.0 * pip_size):
-                                console.print(f"[bold green]📈 TRAILING STOP ADVANCED ON {sym}:[/] Moving SL {current_pos.stop_loss:.4f} -> {trail_sl:.4f}")
-                                if is_live_mode and current_pos.ticket:
-                                    if connector.modify_stop_loss(current_pos.ticket, trail_sl, symbol=sym):
-                                        notifier.send_trailing_stop_updated(sym, current_pos.stop_loss, trail_sl, "Trailing Stop", current_pos.ticket)
-                        elif current_pos.side == PositionSide.SHORT:
-                            trail_sl = peak_profit_prices[sym] + trailing_dist
-                            if trail_sl < current_pos.stop_loss - (1.0 * pip_size):
-                                console.print(f"[bold green]📈 TRAILING STOP ADVANCED ON {sym}:[/] Moving SL {current_pos.stop_loss:.4f} -> {trail_sl:.4f}")
-                                if is_live_mode and current_pos.ticket:
-                                    if connector.modify_stop_loss(current_pos.ticket, trail_sl, symbol=sym):
-                                        notifier.send_trailing_stop_updated(sym, current_pos.stop_loss, trail_sl, "Trailing Stop", current_pos.ticket)
+                    # 2. Cơ chế Trailing Stop Động Chống Ăn Non (Chandelier ATR Trailing)
+                    # Chỉ kích hoạt khi lợi nhuận đạt tối thiểu >= 1.5 * ATR, giữ khoảng đệm đúng 1.5 * ATR cách giá hiện tại
+                    new_trail_sl = risk_engine.evaluate_trailing_stop(
+                        position=current_pos,
+                        current_price=curr_bar.close,
+                        atr=atr_val,
+                        pip_size=pip_size,
+                        activation_atr_mult=1.5,
+                        trailing_dist_atr_mult=1.5
+                    )
+                    if new_trail_sl is not None:
+                        console.print(f"[bold green]📈 TRAILING STOP ADVANCED ON {sym}:[/] Moving SL {current_pos.stop_loss:.4f} -> {new_trail_sl:.4f}")
+                        if is_live_mode and current_pos.ticket:
+                            if connector.modify_stop_loss(current_pos.ticket, new_trail_sl, symbol=sym):
+                                notifier.send_trailing_stop_updated(sym, current_pos.stop_loss, new_trail_sl, "Trailing Stop", current_pos.ticket)
 
                 # =============================================================
                 # STAGE 2: CARVER ALLOCATION & CORRELATION RISK FILTER
